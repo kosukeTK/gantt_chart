@@ -637,13 +637,13 @@
         let lists = [];
         
         //検索条件なし(フィルターなし)
-        if (!state.filter_tasks.length) {
+        if (state.filter_tasks == null || !state.filter_tasks.length) {
           //ストレージ内のタスクデータ取得
           let taskData = window.localStorage.getItem('task');
           state.tasks  = JSON.parse(taskData);
           
           //タスクデータなし
-          if(!state.tasks.length) {
+          if(state.tasks == null || !state.tasks.length) {
             state.categories.map(category => {
               lists.push({ cat: 'category', ...category });
             })

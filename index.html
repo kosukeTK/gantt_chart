@@ -1,0 +1,1383 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css" rel="stylesheet">
+  <script src="https://unpkg.com/vue@next"></script>
+  <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+  <title>COINS</title>
+</head>
+<body>
+  <div id="app">
+    <div id="gantt-header" class="h-12 p-2 flex items-center">
+      <h1 class="text-xl font-bold">COINS</h1>
+      <button @click="addTask()" class="transition duration-500 ease-in-out transform hover:scale-110 bg-indigo-700 hover:bg-indigo-900 text-sm text-white py-1 px-4 rounded-lg ml-4 w-28 h-10 xl:w-24 xl:text-base">
+        <span class="font-bold">
+          改訂追加
+        </span>
+      </button>
+      <div class="flex h-8 ml-5">
+        <input class="text-base py-2 px-1 border rounded-lg" @keyup.enter="searchTask()" v-model="state.search_task" placeholder="改訂名or担当者">
+        <button class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg flex items-center ml-2" @click="searchTask()">検索</button>
+      </div>
+      <div class="h-8 ml-5">
+        <button @click="downloadCSV()" class="bg-green-500 hover:bg-green-700 text-white font-bold py-1 px-4 rounded-lg items-center">CSV出力</button>
+      </div>
+<!--
+      <div class="h-12 ml-36 border border-red-600">
+        <div class="flex">
+          <p class="h-6 w-20 flex justify-center items-center text-xs text-white font-bold bg-indigo-400">事前調査</p>
+          <p class="h-6 w-20 flex justify-center items-center text-xs text-white font-bold bg-indigo-400">改訂依頼書</p>
+          <p class="h-6 w-20 flex justify-center items-center text-xs text-white font-bold bg-blue-400">設計</p>
+          <p class="h-6 w-20 flex justify-center items-center text-xs text-white font-bold bg-blue-400">テスト仕様書</p>
+          <p class="h-6 w-20 flex justify-center items-center text-xs text-white font-bold bg-green-500">製造</p>
+         </div>
+         <div class="flex">
+          <p class="h-6 w-20 flex justify-center items-center text-xs text-white font-bold bg-red-400">テスト</p>
+          <p class="h-6 w-20 flex justify-center items-center text-xs text-white font-bold bg-pink-400">改訂資料作成</p>
+          <p class="h-6 w-20 flex justify-center items-center text-xs text-white font-bold bg-purple-400">Ｗ／Ｔ</p>
+          <p class="h-6 w-20 flex justify-center items-center text-xs text-white font-bold bg-yellow-400">切替</p>
+          <p class="h-6 w-20 flex justify-center items-center text-xs text-white font-bold bg-yellow-700">フォロー</p>
+         </div>
+      </div>
+-->
+      <!-- 勤務時間入力(不使用) -->
+      <teleport to="#form">
+      <transition name="fade">
+        <div class="base z-30" v-show="state.time_show">
+          <div class="overlay" v-show="state.time_show" @click="regTime()"></div>
+          <div class="content" v-show="state.time_show">
+            <div><span class="text-gray-700">勤務時間</span></div>
+            <input class="text-s w-16 border mt-3 px-2 py-2 rounded-lg" v-model="state.work.time" type="number" step="0.5" min="0" max="24" required>
+          </div>
+        </div>
+      </transition>
+      </teleport>
+      <!-- 進捗入力(不使用) -->
+      <teleport to="#form">
+      <transition name="fade">
+        <div class="base z-30" v-show="state.progress_show">
+          <div class="overlay" v-show="state.progress_show" @click="regProgress()"></div>
+          <div class="content" v-show="state.progress_show">
+            <span class="text-gray-700">進捗</span>
+            {{state.progress.name}}
+            <div class="w-36 h-36" style="transform:rotate(-90deg)">
+              <svg height="100%" viewBox="0 0 20 20" width="80%" style="overflow: visible;">
+              <circle cx="50%" cy="50%" fill="none" stroke-width="2" r="9" stroke="#E6ECF0" />
+              <circle
+                  cx="50%"
+                  cy="50%"
+                  fill="none"
+                  stroke-width="2"
+                  r="9"
+                  stroke="#1DA1F2"
+                  stroke-linecap="round"
+                  style="stroke-dasharray: 56.5487"
+                  :style="`stroke-dashoffset: ${state.edit_percentage}`"
+              />
+              </svg>
+            </div>
+            <div class="flex w-36 grid grid-cols-4 mt-5 ml-2">
+              <button class="col-span-1" @click="editProgress('left')">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+                </svg>
+              </button>
+              <button class="col-span-1 col-end-5" @click="editProgress('right')">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </transition>
+      </teleport>
+      <!-- 詳細入力 -->
+      <teleport to="#form">
+      <transition name="fade">
+        <div class="base z-30" v-show="state.detail_show">
+          <div class="overlay" v-show="state.detail_show" @click="state.detail_show=false"></div>
+          <div class="content" v-show="state.detail_show">
+            <label class="block">
+              <span class="text-gray-700">詳細</span>
+              <textarea
+                class="mt-5 mb-5 pl-2 block w-96 h-96 rounded-lg border shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                v-model="state.detail.name" rows="8"></textarea>
+            </label>
+            <button @click="saveDetail(state.detail.id, state.detail.date)" class="bg-indigo-500 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg flex items-center ml-2">
+              <svg class="w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+              <span class="font-bold text-xs">登録</span>
+            </button>
+          </div>
+        </div>
+      </transition>
+      </teleport>
+      <!-- 改訂内容入力 -->
+      <teleport to="#form">
+      <transition name="fade">
+        <div class="base z-30" v-show="state.show">
+          <div class="overlay" v-show="state.show" @click="state.show=false"></div>
+          <div class="content" v-show="state.show">
+            <h2 class="fond-bold">タスクの追加</h2>
+            <div v-show="state.formError">
+              <label class="bg-yellow-300 text-red-500 py-0 px-6">全て入力してください。</label>
+            </div>
+            <div class="my-4">
+              <label class="text-xs">ID:</label>
+              <input v-model.number="state.form.id" class="text-xs border px-1 py-2 rounded-lg" readonly>
+            </div>
+            <div class="my-4">
+              <label class="text-xs">カテゴリーID:</label>
+              <select v-model="state.form.category_id" class="text-xs border px-4 py-2 rounded-lg" required>
+                <option v-for="category in state.categories" :key="category.id" :value="category.id">
+                  {{ category.name }}
+                </option>
+              </select>
+            </div>
+            <div class="my-4">
+              <label class="text-xs">改訂名:</label>
+              <input v-model="state.form.name" class="text-xs border w-full px-4 py-2 rounded-lg">
+            </div>
+            <div class="my-4">
+              <label class="text-xs">改訂区分:</label>
+              <select v-model="state.form.task_kbn" class="text-xs border px-4 py-2 rounded-lg" required>
+                <option v-for="task_kbn in state.tasks_kbn" :key="task_kbn.id" :value="task_kbn.id">
+                  {{ task_kbn.kbn }}
+                </option>
+              </select>
+            </div>
+            <div class="my-4">
+              <label class="text-xs">担当者:</label>
+              <input v-model="state.form.incharge_user" class="text-xs border px-4 py-2 rounded-lg" required>
+            </div>
+            <div class="my-4">
+              <label class="text-xs">開始日:</label>
+              <input v-model="state.form.start_date" class="text-xs border px-4 py-2 rounded-lg" type="date" required>
+            </div>
+            <div class="my-4">
+              <label class="text-xs">期限日:</label>
+              <input v-model="state.form.end_date" class="text-xs border px-4 py-2 rounded-lg" type="date" required>
+            </div>
+            <div class="px-24">
+              <label class="text-xs">進捗度</label>
+              <div class="relative flex items-center justify-center w-36 h-36" style="transform:rotate(-90deg)">
+                <div class="absolute inset-0 flex items-center justify-center text-base font-bold" style="transform:rotate(+90deg)">
+                  {{state.form.percentage}}
+                </div>
+                <svg height="100%" viewBox="0 0 20 20" width="80%" style="overflow: visible;">
+                <circle cx="50%" cy="50%" fill="none" stroke-width="2" r="9" stroke="#E6ECF0" />
+                <circle
+                    cx="50%"
+                    cy="50%"
+                    fill="none"
+                    stroke-width="2"
+                    r="9"
+                    stroke="#1DA1F2"
+                    stroke-linecap="round"
+                    style="stroke-dasharray: 56.5487"
+                    :style="`stroke-dashoffset: ${percent}`"
+                />
+                </svg>
+              </div>
+              <div class="flex w-36 grid grid-cols-6 mb-1 ml-2">
+                <button class="col-span-1 col-start-1 border-none" @click="state.form.percentage = 0">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+                  </svg>
+                </button>
+                <button class="col-span-1 col-start-2 border-none" @click="state.form.percentage -= 10">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+                <button class="col-span-1 col-start-5 border-none" @click="state.form.percentage += 10">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+                <button class="col-span-1 col-end-7 border-none" @click="state.form.percentage = 100">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+<!--            <div class="my-4">
+              <label class="text-xs">進捗度:</label>
+              <input v-model="state.form.percentage" class="text-xs border px-4 py-2 rounded-lg" type="number" step="10" min="0" max="100" required>
+            </div>
+-->            
+            <div v-if="state.update_mode" class="flex items-center justify-between">
+              <button class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg flex items-center">
+                <svg class="w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                <span class="font-bold text-xs" @click="updateTask(state.form.id)">タスクを更新</span>
+              </button>
+              <button @click="saveTask(state.form)" class="bg-indigo-500 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg flex items-center ml-2">
+                <svg class="w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                <span class="font-bold text-xs">タスクを追加</span>
+              </button>
+              <button @click="deleteTask(state.form.id)" class="bg-red-500 hover:bg-red-700 text-white py-2 px-4 rounded-lg flex items-center ml-2">
+                <svg class="w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                <span class="text-xs font-bold text-white">タスクを削除</span>
+              </button>
+            </div>
+            <div v-else>
+              <button @click="saveTask()" class="bg-indigo-500 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg flex items-center">
+                <svg class="w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                <span class="font-bold text-xs">タスクを追加</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </transition>
+      </teleport>
+    </div>
+    <div id="gantt-content" class="flex">
+      <!-- タスク -->
+      <transition appear>
+      <div id="gantt-task">
+        <div id="gantt-task-title" class="flex items-center bg-green-600 text-white h-20" ref="task">
+          <div class="border-t border-r border-b flex items-center justify-center font-bold text-xs w-72 h-full">改訂案件</div>
+          <div class="border-t border-r border-b flex items-center justify-center font-bold text-xs w-24 h-full">改訂区分</div>
+          <div class="border-t border-r border-b flex items-center justify-center font-bold text-xs w-24 h-full">開始日</div>
+          <div class="border-t border-r border-b flex items-center justify-center font-bold text-xs w-24 h-full">完了期限日</div>
+          <div class="border-t border-r border-b flex items-center justify-center font-bold text-xs w-16 h-full">担当</div>
+          <div class="border-t border-r border-b flex items-center justify-center font-bold text-xs w-12 h-full">進捗</div>
+          <div class="border-t border-r border-b flex items-center justify-center font-bold text-xs w-12 h-full">更新</div>
+          <div class="border-t border-r border-b flex items-center justify-center font-bold text-xs w-12 h-full">詳細</div>
+        </div>
+        <div id="gantt-task-list" class="overflow-y-hidden" :style="`height:${calendarViewHeight}px`">
+          <div v-for="(task,index) in displayTasks" :key="index" class="flex h-10" @dragstart="dragTask(task)" @dragover.prevent="dragTaskOver(task)" draggable=true
+           :class="{'bg-gray-500': task.percentage === 100}, (task.incharge_user != null && displayTasks[index+1] != null && task.incharge_user !== displayTasks[index+1].incharge_user) ? 'border-b-2 border-red-500' : 'border-b'">
+            <template v-if="task.cat === 'category'">
+              <div class="flex items-center font-bold w-full text-sm pl-2 flexjustify-between items-center bg-teal-100">
+                <span>{{ task.name }}</span>
+                <div class="pr-4" @click="toggleCategory(task.id)">
+                  <span v-if="task.collapsed">
+                    <svg class="w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </span>
+                  <span v-else>
+                    <svg class="w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </span>
+                </div>
+              </div>
+            </template>
+            <template v-else>
+              <div @click="editTask(task)" class="transition duration-0 ease-in-out transform hover:scale-105 border-r flex items-center font-bold w-72 text-sm pl-4" style="cursor:pointer">
+                {{task.name}}
+              </div>
+              <div class="border-r flex items-center justify-center w-24 text-sm" 
+                :class="{'bg-indigo-400':task.task_kbn == 1}, {'bg-indigo-400':task.task_kbn == 2}, {'bg-blue-400':task.task_kbn == 3},
+                        {'bg-blue-400':task.task_kbn == 4}, {'bg-green-500':task.task_kbn == 5}, {'bg-red-400':task.task_kbn == 6},
+                        {'bg-pink-400':task.task_kbn == 7}, {'bg-purple-400':task.task_kbn == 8}, {'bg-yellow-400':task.task_kbn == 9},
+                        {'bg-yellow-700':task.task_kbn == 10}"
+                >
+                {{task.kaitei_kbn}}
+              </div>
+              <div @click="scrollDate(task.start_date)" class="transition duration-1000 ease-in-out transform hover:scale-110 border-r flex items-center justify-center w-24 text-sm" style="cursor:pointer;">
+                {{task.start_date}}
+              </div>
+              <div @click="scrollDate(task.end_date)" class="transition duration-1000 ease-in-out transform hover:scale-110 border-r flex items-center justify-center w-24 text-sm" style="cursor:pointer;">
+                {{task.end_date}}
+              </div>
+              <div class="border-r flex items-center justify-center w-16 text-sm">
+                {{task.incharge_user}}
+              </div>
+              <div class="border-r flex items-center justify-center w-12 text-sm">
+                {{task.percentage}}%
+              </div>
+              <div class="border-r flex items-center justify-center w-12 text-sm">
+                <button @click="editTask(task)" class="bg-green-500 hover:bg-green-700 flex text-white font-bold rounded-lg py-1.5 px-2 w-10">
+                  <span class="font-bold text-xs">
+                    更新
+                  </span>
+                </button>
+              </div>
+              <div class="border-r flex items-center justify-center w-12 text-sm">
+                <button @click="addDetail(task)" class="flex text-white font-bold rounded-lg py-1.5 px-2 w-10 items-center justify-center" 
+                 :class="(task.detail === '' || task.detail == null) ? 'bg-blue-500' : 'bg-red-500'">
+                  <svg v-if="!(task.detail === '' || task.detail == null)" xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                  </svg>
+                  <span v-else class="font-bold text-xs">
+                    詳細
+                  </span>
+                </button>
+              </div>
+            </template>
+          </div>
+        </div>
+      </div>
+      </transition>
+      <!-- カレンダー -->
+      <div id="gantt-calendar" class="overflow-x-scroll overflow-y-hidden border-l" :style="`width:${calendarViewWidth}px`" ref="refCalendar">
+        <div id="gantt-date" class="h-20">
+          <div id="gantt-year-month" class="relative h-8">
+            <div v-for="(calendar,index) in state.calendars" :key="index">
+              <div
+                class="bg-indigo-700 text-white border-b border-r border-t h-8 absolute font-bold text-sm flex items-center justify-center"
+                :style="`width:${calendar.calendar*state.block_size}px;left:${calendar.start_block_number*state.block_size}px`">
+                {{calendar.date}}
+              </div>
+            </div>
+          </div>
+          <!-- カレンダー日付欄 -->
+          <div id="gantt-day" class="relative h-12">
+            <div v-for="(calendar, index) in state.calendars" :key="index">
+              <div v-for="(day, index) in calendar.days" :key="index">
+                <div 
+                  class="border-r border-b h-12 absolute flex items-center justify-center flex-col font-bold text-xs"
+                  :class="{'bg-blue-100': day.dayOfWeek === '土', 'bg-red-100': day.dayOfWeek === '日', 'bg-red-600 text-white': calendar.year === state.today.year() && calendar.month === state.today.month() && day.day === state.today.date()}"
+                  :style="`width:${state.block_size}px;left:${day.block_number*state.block_size}px`">
+                  <span>{{ day.day }}</span>
+                  <span>{{ day.dayOfWeek }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- カレンダー入力欄 -->
+          <div id="gantt-height" class="relative">
+            <div v-for="(calendar,index) in state.calendars" :key="index">
+              <div v-for="(day,index) in calendar.days" :key="index">
+                <div 
+                  class="border-r border-b absolute flex justify-center"
+                  :class="{'bg-blue-100': day.dayOfWeek === '土', 'bg-red-100': day.dayOfWeek === '日'}" style="pointer-events: none;"
+                  :style="`width:${state.block_size}px;left:${day.block_number*state.block_size}px;height:${calendarViewHeight}px`">
+<!--
+                    <div class="h-6 text-red-500 px-1 text-s font-bold cursor-pointer" @click="taskTime(calendar.year, calendar.month, day.day, day.task_time)" style="pointer-events: auto;">
+                      {{ day.task_time }}
+                    </div>
+-->
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- タスクバー -->
+        <div id="gantt-bar-area" class="relative" :style="`width:${calendarViewWidth}px;height:${calendarViewHeight}px`">
+          <!-- 現行タスクバー --> <!--@dblclick="dispProgress(bar.task)"-->
+          <div v-for="(bar, index) in taskBars" :key="index">
+            <div :style="bar.style" class="rounded-lg absolute h-5 z-20" v-if="bar.task.cat === 'task'" style="cursor:grab"
+              @mousedown="mouseDownMove(bar.task)" @dblclick="addDetail(bar.task)"
+              :class="{'bg-indigo-400':bar.task.task_kbn == 1}, {'bg-indigo-400':bar.task.task_kbn == 2}, {'bg-blue-400':bar.task.task_kbn == 3},
+                    {'bg-blue-400':bar.task.task_kbn == 4}, {'bg-green-500':bar.task.task_kbn == 5}, {'bg-red-400':bar.task.task_kbn == 6},
+                    {'bg-pink-400':bar.task.task_kbn == 7}, {'bg-purple-400':bar.task.task_kbn == 8}, {'bg-yellow-400':bar.task.task_kbn == 9},
+                    {'bg-yellow-700':bar.task.task_kbn == 10}"
+            >
+              <div class="w-full h-full" style="pointer-events: none;">
+                <div class="h-full rounded-l-lg" 
+                  style="pointer-events: none;" 
+                  :style="`width:${bar.task.percentage}%`"
+                  :class="{'rounded-r-lg': bar.task.percentage === 100}, (bar.task.percentage === 100) ? 'bg-gray-500' : 'bg-red-600'">
+                </div>
+              </div>
+              <div class="absolute w-2 h-2 bg-gray-300 border border-black z-10" style="top:6px;left:-6px;cursor:col-resize" 
+                @mousedown.stop="mouseDownResize(bar.task, 'left')"></div>
+              <div class="absolute w-2 h-2 bg-gray-300 border border-black" style="top:6px;right:-6px;cursor:col-resize"
+                @mousedown.stop="mouseDownResize(bar.task, 'right')"></div>
+            </div>
+          </div>
+          <!-- 履歴タスクバー -->
+          <div v-for="(bar, index) in taskRireki" :key="index">
+          <div v-for="(rbar, index) in bar" :key="index">
+            <div @dblclick="addRirekiDetail(rbar.task.id, rbar.rireki.start_date)" :style="rbar.style" class="absolute h-5 back border-l border-r border-black"  v-if="rbar.rireki.cat === 'task'">
+              <div class="w-full h-full" style="pointer-events: none;"></div>
+            </div>
+          </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="form"></div>
+</body>
+</html>
+<script>
+
+  Vue.createApp({
+//
+    setup() {
+      const state = Vue.reactive({
+        today: moment(),
+        start_month: '',
+        end_month: '',
+        block_size: 30,
+        block_number: 0,
+        calendars: [],
+        inner_width: '',
+        inner_height: '',
+        task_width: '',
+        task_height: '',
+        position_id: 0,
+        dragging: false,
+        pageX: '',
+        element: '',
+        left: '',
+        task_id: '',
+        width: '',
+        leftResizing: false,
+        rightResizing: false,
+        task: '',
+        show: false,
+        update_mode: false,
+        formError: false,
+        form: {
+          id: 0,
+          category_id: '',
+          name: '',
+          task_kbn: '',
+          incharge_user: '',
+          start_date: '',
+          end_date: '',
+          percentage: 0,
+          task_rireki: []
+        },
+        categories: [
+          {
+          id: 1,
+          name: 'COINS',
+          collapsed: false,
+          }, 
+          {
+          id: 2,
+          name: 'PRIMAS',
+          collapsed: false,
+          }
+        ],
+        tasks:[],
+        tasks_kbn: [
+          {id: 1, kbn: '事前調査'},
+          {id: 2, kbn: '改訂依頼書'},
+          {id: 3, kbn: '設計'},
+          {id: 4, kbn: 'テスト仕様書'},
+          {id: 5, kbn: '製造'},
+          {id: 6, kbn: 'テスト'},
+          {id: 7, kbn: '改訂資料作成'},
+          {id: 8, kbn: 'ウォークスルー'},
+          {id: 9, kbn: '切替'},
+          {id: 10, kbn: 'フォロー'},
+        ],
+        detail_show: false,
+        detail: {
+          id  : 0,
+          date: '',
+          name: '',
+        },
+        progress_show: false,
+        progress: {
+          id  : 0,
+          name: '',
+        },
+        edit_percentage: 0,
+        search_task: '',
+        filter_flg: false,
+        filter_tasks: [],
+        time_show: false,
+        work: {
+          year : 0,
+          month: 0,
+          day  : 0,
+          time : 0,
+        },
+        hover_flg: false,
+      });
+      
+      const task = Vue.ref(null);
+      const refCalendar = Vue.ref(null);
+      
+//***************************************************************************************
+//  引数で渡された年月の日付一覧を返す
+//***************************************************************************************
+      const getDays = (year, month, block_number) => {
+        const dayOfWeek = ['日', '月', '火', '水', '木', '金', '土']
+        let days = []
+        let date = moment(`${year}-${month}-01`);
+        let num = date.daysInMonth();
+
+        for (let i = 0; i < num; i++) {
+          days.push({
+            day: date.date(),
+            dayOfWeek: dayOfWeek[date.day()],
+            block_number,
+            task_time: 0
+          })
+          date.add(1, 'day');
+          block_number++;
+        }
+        return days;
+      };
+
+//***************************************************************************************
+//  カレンダー作成
+//***************************************************************************************
+      const getCalendar = () => {
+        
+        //ストレージ内のカレンダー取得
+//        let calendarData = JSON.parse(window.localStorage.getItem('calendar'));
+        
+        //現在月の＋－２
+        state.start_month = moment().add(-2, 'months').format('YYYY-MM');
+        state.end_month = moment().add(2, 'months').format('YYYY-MM');
+          
+        //ストレージ内のデータなし
+//        if (!calendarData) {
+          let block_number = 0;
+          let days;
+          let start_month = moment(state.start_month)
+          let end_month = moment(state.end_month)
+          let between_month = end_month.diff(start_month, 'months')
+          
+          for (let i = 0; i <= between_month; i++) {
+            days = getDays(start_month.year(), start_month.format('MM'), block_number);
+            state.calendars.push({
+              date: start_month.format('YYYY年MM月'),
+              year: start_month.year(),
+              month: start_month.month(), //month(), 0,1..11と表示
+              start_block_number: block_number,
+              calendar: days.length,
+              days: days
+            })
+            start_month.add(1, 'months')
+            block_number = days[days.length - 1].block_number
+            block_number++;
+          }
+//          window.localStorage.setItem('calendar', JSON.stringify(state.calendars))
+        //ストレージ内のデータあり
+//        } else {
+//          state.calendars = calendarData;
+//          //ブロックナンバー設定
+//          let maxIndex =  state.calendars.length - 1;
+//          block_number = state.calendars[maxIndex].calendar + state.calendars[maxIndex].start_block_number
+//        }
+//        console.log(calendars)
+        return block_number;
+      };
+//***************************************************************************************
+//  今日の日付まで移動
+//***************************************************************************************
+      const todayPosition = () => {
+        $('#gantt-calendar').animate({scrollLeft: scrollDistance.value}, 800);
+      };
+      
+//***************************************************************************************
+//  画面サイズ変更
+//***************************************************************************************
+      const getWindowSize = () => {
+        state.inner_width = window.innerWidth
+        state.inner_height = window.innerHeight
+        state.task_width = task.value.offsetWidth
+        state.task_height = task.value.offsetHeight
+      };
+
+//***************************************************************************************
+//  ホイール
+//***************************************************************************************
+      const windowSizeCheck = (event) => {  //eventなくても動く
+        let height = lists.value.length - state.position_id
+        if (event.deltaY > 0 && height * 40 > calendarViewHeight.value) {
+          state.position_id++
+        } else if (event.deltaY < 0 && state.position_id !== 0) {
+          state.position_id--
+        }
+      };
+      
+//***************************************************************************************
+//  カレンダー表示
+//***************************************************************************************
+      const calendars = Vue.computed(() => {
+        return getCalendar();
+      });
+            
+//***************************************************************************************
+//  カレンダー横幅の可変長
+//***************************************************************************************
+      const calendarViewWidth = Vue.computed(() => {
+        return state.inner_width - state.task_width
+      });
+      
+//***************************************************************************************
+//  カレンダー縦幅の可変長
+//***************************************************************************************
+      const calendarViewHeight = Vue.computed(() => {
+        return state.inner_height - state.task_height - 48 - 20
+      });
+      
+//***************************************************************************************
+//  今日の日付までのスクロールpx
+//***************************************************************************************
+      const scrollDistance = Vue.computed(() => {
+        let start_date = moment(state.start_month);
+        let between_days = moment().diff(start_date, 'days')
+      //console.log(refCalendar);
+        return (between_days + 1) * state.block_size - refCalendar.value.clientWidth / 2;
+      });
+      
+//***************************************************************************************
+//  タスク作成
+//***************************************************************************************
+      const lists = Vue.computed(() => {
+        let lists = [];
+        
+        //検索条件なし(フィルターなし)
+        if (!state.filter_tasks.length) {
+          //ストレージ内のタスクデータ取得
+          let taskData = window.localStorage.getItem('task');
+          state.tasks  = JSON.parse(taskData);
+          
+          //タスクデータなし
+          if(!state.tasks.length) {
+            state.categories.map(category => {
+              lists.push({ cat: 'category', ...category });
+            })
+            state.tasks = []; 
+          //タスクデータあり
+          } else {
+            //lists[]にカテゴリーを追加
+            state.categories.map(category => {
+              lists.push({ cat: 'category', ...category });
+              //lists[]にタスクを追加
+              state.tasks.map(task => {
+                if (task.category_id === category.id && !category.collapsed) {
+                  lists.push({ cat: 'task', ...task });
+                }
+              })
+            })
+            //lists[]とtasks_kbn[]の改訂区分を比較し、改訂名をlists[]に追加する
+            lists.map(list => {
+              state.tasks_kbn.map(kbn => {
+                if (list.task_kbn === kbn.id) {
+                  list.kaitei_kbn = kbn.kbn;
+                }
+              })
+            })
+          }
+        //検索条件あり(フィルターあり)  
+        } else {
+          //lists[]にカテゴリーを追加
+          state.categories.map(category => {
+            lists.push({ cat: 'category', ...category });
+            //lists[]にタスクを追加
+            state.filter_tasks.map(task => {
+              if (task.category_id === category.id && !category.collapsed) {
+                lists.push({ cat: 'task', ...task });
+              }
+            })
+          })
+          //lists[]とtasks_kbn[]の改訂区分を比較し、lists[]に改訂名を追加する
+          lists.map(list => {
+            state.tasks_kbn.map(kbn => {
+              if (list.task_kbn === kbn.id) {
+                list.kaitei_kbn = kbn.kbn;
+              }
+            })
+          })
+        }  
+        
+        //改訂区分で昇順ソート
+        lists.sort((a, b) => {
+          if(a.category_id === b.category_id) {
+            return (a.incharge_user > b.incharge_user) ? 1 : (a.incharge_user < b.incharge_user) ? -1 : //担当者
+                   (a.task_kbn > b.task_kbn) ? 1 : (a.task_kbn < b.task_kbn) ? -1 :                   //業務区分
+                   (a.start_date > b.start_date) ? 1 : (a.start_date < b.start_date) ? -1 : 0         //開始日時
+          }
+        })
+//        console.table(lists);
+        return lists;
+      });
+      
+//***************************************************************************************
+//  タスク表示
+//***************************************************************************************
+      const displayTasks = Vue.computed(() => {
+        let display_task_number = Math.floor(calendarViewHeight.value / 40);
+        return lists.value.slice(state.position_id, state.position_id + display_task_number);
+      });
+
+//***************************************************************************************
+//  タスクバー作成
+//***************************************************************************************
+      const taskBars = Vue.computed(() => {
+        let start_date = moment(state.start_month);
+        let top = 10;
+        let left;
+        let between;
+        let start;
+        let style;
+        return displayTasks.value.map(task => {
+          style = {}
+          if(task.cat === 'task'){
+            let date_from = moment(task.start_date);
+            let date_to   = moment(task.end_date);
+            between       = date_to.diff(date_from, 'days');
+            between++;
+            start = date_from.diff(start_date, 'days');
+            left = start * state.block_size;
+            style = {
+              top:  `${top}px`,
+              left: `${left}px`,
+              width:`${state.block_size * between}px`,
+            }
+          }
+          top = top + 40;
+//          console.log(task)
+          return {
+            style,
+            task
+          }
+        })
+      });
+//***************************************************************************************
+//  選択したタスクバーの情報を取得する                                               No.1
+//***************************************************************************************
+      const mouseDownMove = (task) => {
+        state.dragging = true;
+        state.pageX = event.pageX;
+        state.element = event.target;
+        state.left = event.target.style.left;
+        state.task_id = task.id;
+      };
+         
+//***************************************************************************************
+//  タスクバー自体を動かすときのマウスの座標を取得する                                No.2
+//***************************************************************************************
+      const mouseMove = () => {
+        if (state.dragging) {
+          let diff = state.pageX - event.pageX;
+          state.element.style.left = `${parseInt(state.left.replace('px', '')) - diff}px`;
+        }
+      };
+        
+//***************************************************************************************
+//  タスクバー変動終了時に開始日時と終了日時を更新する                               No.3
+//***************************************************************************************
+      const stopDrag = () => {
+        //タスクバー自体を動かすとき
+        if (state.dragging) {
+          let diff = state.pageX - event.pageX
+          let days = Math.ceil(diff / state.block_size)
+          if (days !== 0) {
+            let task = state.tasks.find(task => 
+              task.id === state.task_id
+            )
+            let start_date = moment(task.start_date).add(-days, 'days')
+            let end_date = moment(task.end_date).add(-days, 'days')
+            task['start_date'] = start_date.format('YYYY-MM-DD')
+            task['end_date'] = end_date.format('YYYY-MM-DD')
+          } else {
+            state.element.style.left = `${state.left.replace('px', '')}px`;
+          }
+          window.localStorage.setItem('task', JSON.stringify(state.tasks))
+        }
+        //タスクバーの幅を左から変えるとき
+        if (state.leftResizing) {
+          let diff = state.pageX - event.pageX;
+          let days = Math.ceil(diff / state.block_size)
+          if (days !== 0) {
+            let task = state.tasks.find(task => task.id === state.task_id);
+            let start_date = moment(task.start_date).add(-days, 'days')
+            let end_date = moment(task.end_date)
+            if (end_date.diff(start_date, 'days') <= 0) {
+              task['start_date'] = end_date.format('YYYY-MM-DD')
+            } else {
+              task['start_date'] = start_date.format('YYYY-MM-DD')
+            }
+          } else {
+            state.element.style.width = state.width;
+            state.element.style.left = `${state.left.replace('px', '')}px`;
+          }
+          window.localStorage.setItem('task', JSON.stringify(state.tasks))
+        }
+        //タスクバーの幅を右から変えるとき
+        if (state.rightResizing) {
+          let diff = state.pageX - event.pageX;
+          let days = Math.ceil(diff / state.block_size)
+          if (days === 1) {
+            state.element.style.width = `${parseInt(state.width.replace('px', ''))}px`;
+          } else if (days <= 2) {
+            days--;
+            let task = state.tasks.find(task => task.id === state.task_id);
+            let end_date = moment(task.end_date).add(-days, 'days')
+            task['end_date'] = end_date.format('YYYY-MM-DD')
+          } else {
+            let task = state.tasks.find(task => task.id === state.task_id);
+            let start_date = moment(task.start_date);
+            let end_date = moment(task.end_date).add(-days, 'days')
+            if (end_date.diff(start_date, 'days') < 0) {
+              task['end_date'] = start_date.format('YYYY-MM-DD')
+            } else {
+              task['end_date'] = end_date.format('YYYY-MM-DD')
+            }
+          }
+          window.localStorage.setItem('task', JSON.stringify(state.tasks))
+        }
+        state.dragging = false;
+        state.leftResizing = false;
+        state.rightResizing = false;
+      };
+
+//***************************************************************************************
+//  タスクバーの幅を変動する前に状態を取得する                                       No.1
+//***************************************************************************************
+      const mouseDownResize = (task, direction) => {
+        direction === 'left' ? state.leftResizing = true : state.rightResizing = true;
+         state.pageX = event.pageX;
+         state.width = event.target.parentElement.style.width;
+         state.left = event.target.parentElement.style.left;
+         state.element = event.target.parentElement;
+         state.task_id = task.id
+      };
+        
+//***************************************************************************************
+//  タスクバーの幅を変動する                                                         No.2
+//***************************************************************************************
+      const mouseResize = () => {
+        if (state.leftResizing) {
+          let diff = state.pageX - event.pageX
+          if (parseInt(state.width.replace('px', '')) + diff > state.block_size) {
+            state.element.style.width = `${parseInt(state.width.replace('px', '')) + diff}px`
+            state.element.style.left = `${state.left.replace('px', '') - diff}px`;
+          }
+        }
+        if (state.rightResizing) {
+          let diff = state.pageX - event.pageX;
+          if (parseInt(state.width.replace('px', '')) - diff > state.block_size) {
+            state.element.style.width = `${parseInt(state.width.replace('px', '')) - diff}px`
+          }
+        }
+      };
+      
+//***************************************************************************************
+//  タスクをドラッグ開始
+//***************************************************************************************
+      const dragTask = (dragTask) => {
+        state.task = dragTask
+      };
+      
+//***************************************************************************************
+//  タスクを移動する
+//***************************************************************************************
+      const dragTaskOver = (overTask) => {
+        let deleteIndex;
+        let addIndex;
+        if (state.task.cat !== 'category') {
+          if (overTask.cat === 'category') {
+            let updateTask = state.tasks.find(task => task.id === state.task.id)
+            updateTask['category_id'] = overTask['id']
+          } else {
+            if (overTask.id !== state.task.id) {
+              state.tasks.map((task, index) => {
+                if (task.id === state.task.id) {
+                  deleteIndex = index
+                } 
+              })
+              state.tasks.map((task, index) => {
+                if (task.id === state.task.id) {
+                  addIndex = index
+                } 
+              })
+              state.tasks.splice(deleteIndex, 1)
+              state.task['category_id'] = overTask['category_id']
+              state.tasks.splice(addIndex, 0, state.task)
+              window.localStorage.setItem('task', JSON.stringify(state.tasks))
+            }
+          }
+        }
+      };
+      
+//***************************************************************************************
+//  タスクカテゴリの閉開
+//***************************************************************************************
+      const toggleCategory = (task_id) => {
+        let category = state.categories.find(category => category.id === task_id)
+        category['collapsed'] = !category['collapsed']
+      };
+      
+//***************************************************************************************
+//  タスク追加、保存、編集、更新、削除
+//***************************************************************************************
+//----改訂案件ボタン----
+      const addTask = () => {
+        state.update_mode = false;
+        state.form = {};
+        //タスクIDの自動インクリメント
+        if (state.tasks.length > 0) {
+          state.form.id = Math.max(...state.tasks.map(task => task.id)) + 1 //Math.max内では配列を展開すること
+        } else {
+          state.form.id = 1
+        }
+        state.form.percentage = 0;
+        state.show = true;
+      };
+//----追加ボタン----
+      const saveTask = (form) => {
+        state.formError = false
+        if (formCheck() === 1) {return};
+        let rireki = [];
+        //既存データを修正して追加時
+        if (form) {          
+          let delete_index;
+          let delete_rireki;
+          state.tasks.map((task, index) => {
+            if (task.id == form.id) {
+              delete_index = index
+              //修正前の開始・終了日時を履歴として追加
+              rireki.push({
+                cat: 'task',
+                start_date: task.start_date,
+                end_date  : task.end_date,
+                task_kbn  : task.task_kbn,
+                detail    : task.detail
+              })
+              //空データ削除
+              task.task_rireki.map((rireki, index) => {
+                if (rireki.start_date === '') {
+                  delete_rireki = index
+                }
+              })
+              if (delete_rireki) { 
+                task.task_rireki.splice(delete_rireki, 1)
+              }
+              task.task_rireki.push(...rireki)
+//              console.log(task)
+            } 
+          })
+          //修正前を削除
+          state.tasks.splice(delete_index, 1)
+          //修正後を追加
+          state.form.detail = ''
+          state.tasks.push(state.form)
+          
+        //新しいデータを追加時
+        } else {
+          rireki.push({
+            cat        : 'task',
+            start_date : '',
+            end_date   : '',
+            task_kbn   : '',
+            detail     : ''
+          })
+//          console.log(state.form)
+          state.form.task_rireki = []
+          state.form.task_rireki.push(...rireki)
+          state.tasks.push(state.form)
+        }
+        window.localStorage.setItem('task', JSON.stringify(state.tasks))
+        state.form = {}
+        state.show = false
+      };
+//----更新フォームへ遷移ボタン----
+      const editTask = (task) => {
+        state.update_mode = true;
+        state.show = true;
+        Object.assign(state.form, task);
+      };
+//----更新ボタン----
+      const updateTask = (id) => {
+        state.formError = false
+        if (formCheck() === 1) {return};
+        let task = state.tasks.find(task => task.id === id);
+        Object.assign(task, state.form);
+        window.localStorage.setItem('task', JSON.stringify(state.tasks))
+        state.from = {};
+        state.show = false;
+      };
+//----削除ボタン----
+      const deleteTask = (id) => {
+        let delete_index;
+        state.tasks.map((task, index) => {
+          if (task.id === id) delete_index = index;
+        })
+        state.tasks.splice(delete_index, 1)
+        window.localStorage.setItem('task', JSON.stringify(state.tasks))
+        state.form ={};
+        state.show = false;
+      };
+
+//***************************************************************************************
+//  入力チェック
+//***************************************************************************************
+      const formCheck = () => {
+        if (!state.form.category_id   || !state.form.name       ||
+            !state.form.incharge_user || !state.form.start_date ||
+            !state.form.end_date      || state.form.percentage == null) {
+          state.formError = true
+          return 1
+        } else {
+          return 0
+        }
+      };
+
+//***************************************************************************************
+//  詳細表示、追加
+//***************************************************************************************
+      //詳細画面表示
+      const addDetail = (task) => {
+      //データ表示初期化
+      state.detail = {};
+      //タスクに'detail'キーが存在するかチェック
+      if('detail' in task) {
+        //保持データを表示データへ移す
+        state.detail.id   = task.id;
+        state.detail.name = task.detail;
+      //キーが存在しない
+      } else {
+        //表示ﾃﾞｰﾀ初期化
+        state.detail.id   = task.id;
+        state.detail.name = '';
+      }
+        state.detail_show = true;
+      }
+      //詳細追加
+      const saveDetail = (id, start_date) => {
+        //現行タスクの詳細
+        if (!start_date) {
+          state.tasks.map(task => {
+            if (task.id === id) {
+              task['detail'] = state.detail.name
+            }
+          })
+        //履歴タスクの詳細
+        } else {
+          let task = state.tasks.find(task => task.id === id);
+          let rireki = task.task_rireki.find(rireki => rireki.start_date === start_date);
+          rireki.detail = state.detail.name;
+        }
+        window.localStorage.setItem('task', JSON.stringify(state.tasks));
+        state.detail_show = false;
+      }
+//***************************************************************************************
+//  進捗バー 表示／編集／登録
+//***************************************************************************************
+      const dispProgress = (task) => {
+        //画面保持用ID
+        state.progress.id = task.id;
+        //画面保持用パーセント
+        state.progress.name = Number(task.percentage);
+        
+        state.edit_percentage = Math.floor( ((100 - state.progress.name) / 1.7683) * Math.pow( 10, 4 ) ) / Math.pow( 10, 4 );
+        state.progress_show = true;
+      }
+
+      const editProgress = (LR) => {
+        if (LR === 'left') {
+          state.progress.name = state.progress.name - 10         
+        } else {
+          state.progress.name = state.progress.name + 10
+        }
+        state.edit_percentage = Math.floor( ((100 - state.progress.name) / 1.7683) * Math.pow( 10, 4 ) ) / Math.pow( 10, 4 ) ;
+      }
+
+      const regProgress = () => {
+        state.tasks.map(task => {
+          if (state.progress.id === task.id) {
+            task.percentage = String(state.progress.name);
+          }
+        })
+        window.localStorage.setItem('task', JSON.stringify(state.tasks));
+        state.progress_show = false;
+      }
+//***************************************************************************************
+//  ワード検索
+//***************************************************************************************
+      const searchTask = () => {
+        state.filter_tasks = [];
+        let word = state.search_task.trim();
+        if (!word) { return; }
+        
+        state.filter_tasks = state.tasks.filter(task => {
+          return task.name.includes(word) || task.incharge_user.includes(word)
+        })
+        state.filter_flg = true
+//        console.log(state.filter_tasks)
+      }
+
+//***************************************************************************************
+//  勤務時間記入
+//***************************************************************************************
+      const taskTime = (year, month, Pday, time) => {
+        state.work = {};
+        //選択した年月日と一致する勤務時間を取得
+        state.calendars.map(calendar => {
+          if (calendar.year === year  && calendar.month === month) {
+            calendar.days.map(day => {
+              if (day.day === Pday) {
+                state.work.year = year
+                state.work.month = month
+                state.work.day = Pday
+                state.work.time = day.task_time
+              }
+            })
+          }
+        })
+        state.time_show = true;
+      }
+      
+      const regTime = () => {
+        state.calendars.map(calendar => {
+          if (calendar.year === state.work.year && calendar.month === state.work.month) {
+            calendar.days.map(day => {
+              if (day.day === state.work.day) {
+                day.task_time = state.work.time;
+                window.localStorage.setItem('calendar', JSON.stringify(state.calendars));
+              }
+            })
+          }
+        })
+        state.time_show = false;
+      }
+
+//***************************************************************************************
+//  CSV出力
+//***************************************************************************************
+      const downloadCSV = () => {
+        //ヘッダー部
+        let csv = '\ufeff' + 'ID, 改訂名, 改訂区分, 担当者, 開始日, 終了日, 進捗度, 詳細\n'
+        //データ部
+        state.tasks.forEach(task => {
+          let replace_detail=''
+          if(task.detail) {
+            replace_detail = task.detail.replace(/\n/g, ' ')
+          }
+          let line = task.id + ',' + task.name + ',' + task.kaitei_kbn + ',' + task.incharge_user + 
+          ',' + task.start_date + ',' + task.end_date + ',' + task.percentage + ',' + replace_detail + '\n'
+          csv += line
+        })
+        
+        let blob = new Blob([csv], { type: 'text/csv' })
+        let link = document.createElement('a')
+        link.href = window.URL.createObjectURL(blob)
+        link.download = moment().format('YYYYMMDD') + '.csv'
+        link.click()
+      }
+
+//***************************************************************************************
+//  タスク履歴表示
+//***************************************************************************************
+      const taskRireki = Vue.computed(() => {
+        let start_date = moment(state.start_month);
+        let top = -30;
+        let left;
+        let between;
+        let start;
+        let style;
+        let task_bar;
+        let task_kbn;
+        return displayTasks.value.map(task => {    //mapの直前にreturn
+          if(task.cat === 'task') {
+            task_bar = true;
+            return task.task_rireki.map(rireki => {  //mapの直前にreturn
+              if (rireki.cat === 'task') {
+                style = {};
+                let date_from = moment(rireki.start_date);
+                let date_to   = moment(rireki.end_date);
+                //履歴データがある場合
+                if (rireki.start_date !== '') {
+                  between       = date_to.diff(date_from, 'days');
+                  between++;
+                  start = date_from.diff(start_date, 'days');
+                  left = start * state.block_size;
+                  
+                  //改訂区分ごとに色を変える
+                  switch(rireki.task_kbn) {
+                    case 1: 
+                    case 2: task_kbn = 'rgba(129, 140, 248)'; break;
+                    case 3: 
+                    case 4: task_kbn = 'rgba(96, 165, 250)'; break;
+                    case 5: task_kbn = 'rgba(16, 185, 129)'; break;
+                    case 6: task_kbn = 'rgba(248, 113, 113)'; break;
+                    case 7: task_kbn = 'rgba(244, 114, 182)'; break;
+                    case 8: task_kbn = 'rgba(167, 139, 250)'; break;
+                    case 9: task_kbn = 'rgba(251, 191, 36)'; break;
+                    case 10: task_kbn = 'rgba(180, 83, 9)'; break;
+                  }
+                  
+                  style = {
+                    top:  `${top}px`,
+                    left: `${left}px`,
+                    width:`${state.block_size * between}px`,
+                    backgroundColor: task_kbn
+                  }
+                }
+                //履歴データが複数ある場合、１行で表示する
+                if (task_bar) {
+                  top = top + 40;
+                  task_bar = false;
+                }
+                
+                return {
+                  style,
+                  task,
+                  rireki
+                }
+              }
+            })
+          } else {
+            top = top + 40
+          }
+        })
+      })
+//***************************************************************************************
+//  タスク履歴の詳細表示
+//***************************************************************************************
+      const addRirekiDetail = (id, start_date) => {
+        let task = state.tasks.find(task => task.id === id);
+        let rireki = task.task_rireki.find(rireki => rireki.start_date === start_date);
+        state.detail = {};
+//        console.log(rireki)
+        if ('detail' in rireki) {
+          state.detail.id = id;
+          state.detail.date = start_date;
+          state.detail.name = rireki.detail;
+        } else {
+          state.detail.id = id;
+          state.detail.date = start_date;
+          state.detail.name = '';
+        }
+        state.detail_show = true;
+      }
+//***************************************************************************************
+//  進捗円progress表示
+//***************************************************************************************
+      const percent = Vue.computed(() => {
+        if (Number(state.form.percentage) < 0) { return state.form.percentage = 0 };
+        if (Number(state.form.percentage) > 100) { return state.form.percentage = 100 };
+        return Math.floor( ((100 - Number(state.form.percentage)) / 1.7683) * Math.pow( 10, 4 ) ) / Math.pow( 10, 4 );
+      })
+      
+//***************************************************************************************
+//  選択した日付まで移動
+//***************************************************************************************
+      const scrollDate = (date) => {
+        let start_date = moment(state.start_month);
+        let task_date = moment(date)
+        let between_date = task_date.diff(start_date, 'days');
+        let scroll = (between_date + 1) * state.block_size - refCalendar.value.clientWidth / 2;
+        $('#gantt-calendar').animate({scrollLeft: scroll}, 300);
+      }
+
+//***************************************************************************************
+//  マウント
+//***************************************************************************************
+      Vue.onMounted(() => {
+        getCalendar();
+        getWindowSize();
+        window.addEventListener('resize', getWindowSize);
+        window.addEventListener('wheel', windowSizeCheck);
+        window.addEventListener('mousemove', mouseMove);
+        window.addEventListener('mousemove', mouseResize);
+        window.addEventListener('mouseup', stopDrag);
+        Vue.nextTick(() => { todayPosition() });
+      });
+      
+      return {
+        state,
+        task,
+        refCalendar,
+        getDays,
+        getCalendar,
+        todayPosition,
+        getWindowSize,
+        windowSizeCheck,
+        calendars,
+        calendarViewWidth,
+        calendarViewHeight,
+        scrollDistance,
+        lists,
+        displayTasks,
+        taskBars,
+        mouseDownMove,
+        mouseMove,
+        mouseResize,
+        stopDrag,
+        mouseDownResize,
+        dragTask,
+        dragTaskOver,
+        toggleCategory,
+        addTask,
+        saveTask,
+        editTask,
+        updateTask,
+        deleteTask,
+        formCheck,
+        addDetail,
+        saveDetail,
+        dispProgress,
+        editProgress,
+        regProgress,
+        searchTask,
+        taskTime,
+        regTime,
+        downloadCSV,
+        taskRireki,
+        addRirekiDetail,
+        percent,
+        scrollDate,
+      };
+    },
+  }).mount('#app');
+</script>
+<style>
+  .base {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    margin-top: 50px;
+  }
+
+  .overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: gray;
+    opacity: 0.5;
+  }
+
+  .content {
+    background-color: white;
+    position: relative;
+    border-radius: 10px;
+    padding: 40px;
+  }
+  .back {
+//    background-color: orange;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath fill-rule='evenodd' d='M0 0h4v4H0V0zm4 4h4v4H4V4z'/%3E%3C/g%3E%3C/svg%3E");
+  }
+  
+  .v-enter-to, .v-leave-from {
+    transition: opacity 2.0s ease;
+  } 
+  .v-enter-from, .v-leave-to {
+    opacity: 0;
+  }
+
+  .fade-enter-active, .fade-leave-active {
+    transition: opacity 0.2s ease;
+  }
+
+  .fade-enter-from, .fade-leave-to {
+    opacity: 0;
+  }
+</style>

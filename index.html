@@ -3,28 +3,32 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link href="https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css" rel="stylesheet">
+<!--   <link href="https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css" rel="stylesheet"> -->
+  <script src="https://cdn.tailwindcss.com/"></script>
   <script src="https://unpkg.com/vue@next"></script>
   <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
-  <title>COINS</title>
+  <title>配車サポート スケジュール管理</title>
 </head>
 <body>
-  <div id="app">
+  <div id="app" class="main-back overflow-hidden">
     <div id="gantt-header" class="h-12 p-2 flex items-center">
-      <h1 class="text-xl font-bold">COINS</h1>
+      <h1 class="text-xl font-bold Ordinal">配車サポート</h1>
       <button @click="addTask()" class="transition duration-500 ease-in-out transform hover:scale-110 bg-indigo-700 hover:bg-indigo-900 text-sm text-white py-1 px-4 rounded-lg ml-4 w-28 h-10 xl:w-24 xl:text-base">
         <span class="font-bold">
-          改訂追加
+          追加
         </span>
       </button>
       <div class="flex h-8 ml-5">
-        <input class="text-base py-2 px-1 border rounded-lg" @keyup.enter="searchTask()" v-model="state.search_task" placeholder="改訂名or担当者">
+        <input class="text-base py-2 px-1 border rounded-lg" @keyup.enter="searchTask()" v-model="state.search_task" placeholder="作業名or担当者">
         <button class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg flex items-center ml-2" @click="searchTask()">検索</button>
       </div>
       <div class="h-8 ml-5">
         <button @click="downloadCSV()" class="bg-green-500 hover:bg-green-700 text-white font-bold py-1 px-4 rounded-lg items-center">CSV出力</button>
+      </div>
+      <div class="h-8 ml-5">
+      	<button @click="calendarViewWidthChange(state.gamen_mode)" class="bg-yellow-400 hover:bg-yellow-700 text-white font-bold py-1 px-4 rounded-lg items-center">画面切替</button>
       </div>
 <!--
       <div class="h-12 ml-36 border border-red-600">
@@ -118,6 +122,14 @@
         </div>
       </transition>
       </teleport>
+      <!-- 詳細ホバー表示 -->
+      <teleport to="#form">
+      <transition name="fade">
+        <div class="hover-content" v-show="state.detail_hover" :style="`left:${state.hover_left}px;top:${state.hover_top}px`" ref="refDetail">
+          <pre class="text-xs font-sans font-bold">{{ state.detail_hover_name }}</pre>
+        </div>
+      </transition>
+      </teleport>
       <!-- 改訂内容入力 -->
       <teleport to="#form">
       <transition name="fade">
@@ -141,11 +153,11 @@
               </select>
             </div>
             <div class="my-4">
-              <label class="text-xs">改訂名:</label>
+              <label class="text-xs">作業名:</label>
               <input v-model="state.form.name" class="text-xs border w-full px-4 py-2 rounded-lg">
             </div>
             <div class="my-4">
-              <label class="text-xs">改訂区分:</label>
+              <label class="text-xs">作業区分:</label>
               <select v-model="state.form.task_kbn" class="text-xs border px-4 py-2 rounded-lg" required>
                 <option v-for="task_kbn in state.tasks_kbn" :key="task_kbn.id" :value="task_kbn.id">
                   {{ task_kbn.kbn }}
@@ -213,25 +225,35 @@
               <input v-model="state.form.percentage" class="text-xs border px-4 py-2 rounded-lg" type="number" step="10" min="0" max="100" required>
             </div>
 -->            
-            <div v-if="state.update_mode" class="flex items-center justify-between">
+            <div v-if="state.update_mode">
+            <div class="flex items-center justify-evenly mb-4">
               <button class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg flex items-center">
                 <svg class="w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
                 <span class="font-bold text-xs" @click="updateTask(state.form.id)">タスクを更新</span>
               </button>
-              <button @click="saveTask(state.form)" class="bg-indigo-500 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg flex items-center ml-2">
+              <button @click="saveTask(state.form)" class="bg-indigo-500 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg flex items-center">
                 <svg class="w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                 </svg>
                 <span class="font-bold text-xs">タスクを追加</span>
               </button>
-              <button @click="deleteTask(state.form.id)" class="bg-red-500 hover:bg-red-700 text-white py-2 px-4 rounded-lg flex items-center ml-2">
+            </div>
+            <div class="flex items-center justify-evenly">
+              <button v-show="state.rireki_flg" @click="historyBack(state.form.id)" class="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded-lg flex items-center">
+                <svg class="w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+				  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+				</svg>
+                <span class="font-bold text-xs">タスクを戻す</span>
+              </button>
+              <button @click="deleteTask(state.form.id)" class="bg-red-500 hover:bg-red-700 text-white py-2 px-4 rounded-lg flex items-center">
                 <svg class="w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                 </svg>
                 <span class="text-xs font-bold text-white">タスクを削除</span>
               </button>
+            </div>
             </div>
             <div v-else>
               <button @click="saveTask()" class="bg-indigo-500 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg flex items-center">
@@ -250,15 +272,15 @@
       <!-- タスク -->
       <transition appear>
       <div id="gantt-task">
-        <div id="gantt-task-title" class="flex items-center bg-green-600 text-white h-20" ref="task">
-          <div class="border-t border-r border-b flex items-center justify-center font-bold text-xs w-72 h-full">改訂案件</div>
-          <div class="border-t border-r border-b flex items-center justify-center font-bold text-xs w-24 h-full">改訂区分</div>
-          <div class="border-t border-r border-b flex items-center justify-center font-bold text-xs w-24 h-full">開始日</div>
-          <div class="border-t border-r border-b flex items-center justify-center font-bold text-xs w-24 h-full">完了期限日</div>
-          <div class="border-t border-r border-b flex items-center justify-center font-bold text-xs w-16 h-full">担当</div>
-          <div class="border-t border-r border-b flex items-center justify-center font-bold text-xs w-12 h-full">進捗</div>
-          <div class="border-t border-r border-b flex items-center justify-center font-bold text-xs w-12 h-full">更新</div>
-          <div class="border-t border-r border-b flex items-center justify-center font-bold text-xs w-12 h-full">詳細</div>
+        <div id="gantt-task-title" class="flex items-center bg-green-600 text-white h-20"  ref="refTask">
+          <div class="border-t border-r border-b flex items-center justify-center font-bold text-xs w-72 h-full">作業内容</div>
+          <div class="border-t border-r border-b flex items-center justify-center font-bold text-xs w-24 h-full">作業区分</div>
+          <div v-show="state.gamen_mode" class="border-t border-r border-b flex items-center justify-center font-bold text-xs w-24 h-full">開始日</div>
+          <div v-show="state.gamen_mode" class="border-t border-r border-b flex items-center justify-center font-bold text-xs w-24 h-full">完了期限日</div>
+          <div v-show="state.gamen_mode" class="border-t border-r border-b flex items-center justify-center font-bold text-xs w-16 h-full">担当</div>
+          <div v-show="state.gamen_mode" class="border-t border-r border-b flex items-center justify-center font-bold text-xs w-12 h-full">進捗</div>
+          <div v-show="state.gamen_mode" class="border-t border-r border-b flex items-center justify-center font-bold text-xs w-12 h-full">更新</div>
+          <div v-show="state.gamen_mode" class="border-t border-r border-b flex items-center justify-center font-bold text-xs w-12 h-full">詳細</div>
         </div>
         <div id="gantt-task-list" class="overflow-y-hidden" :style="`height:${calendarViewHeight}px`">
           <div v-for="(task,index) in displayTasks" :key="index" class="flex h-10" @dragstart="dragTask(task)" @dragover.prevent="dragTaskOver(task)" draggable=true
@@ -281,39 +303,39 @@
               </div>
             </template>
             <template v-else>
-              <div @click="editTask(task)" class="transition duration-0 ease-in-out transform hover:scale-105 border-r flex items-center font-bold w-72 text-sm pl-4" style="cursor:pointer">
+              <div @dblclick="editTask(task)" @click="copyText(task.name)" class="transition duration-0 ease-in-out transform hover:scale-105 hover:border-none border-r flex items-center font-bold w-72 text-sm pl-4" style="cursor:pointer">
                 {{task.name}}
               </div>
               <div class="border-r flex items-center justify-center w-24 text-sm" 
-                :class="{'bg-indigo-400':task.task_kbn == 1}, {'bg-indigo-400':task.task_kbn == 2}, {'bg-blue-400':task.task_kbn == 3},
-                        {'bg-blue-400':task.task_kbn == 4}, {'bg-green-500':task.task_kbn == 5}, {'bg-red-400':task.task_kbn == 6},
-                        {'bg-pink-400':task.task_kbn == 7}, {'bg-purple-400':task.task_kbn == 8}, {'bg-yellow-400':task.task_kbn == 9},
-                        {'bg-yellow-700':task.task_kbn == 10}"
+                :class="{'bg-sky-300':task.task_kbn == 1}, {'bg-blue-400':task.task_kbn == 2},   {'bg-indigo-500':task.task_kbn == 3},
+                        {'bg-red-400':task.task_kbn == 4}, {'bg-orange-400':task.task_kbn == 5}, {'bg-yellow-400':task.task_kbn == 6},
+                        {'bg-lime-500':task.task_kbn == 7},{'bg-yellow-700':task.task_kbn == 8}, {'bg-red-700':task.task_kbn == 9},
+                        {'bg-yellow-200':task.task_kbn == 10}"
                 >
                 {{task.kaitei_kbn}}
               </div>
-              <div @click="scrollDate(task.start_date)" class="transition duration-1000 ease-in-out transform hover:scale-110 border-r flex items-center justify-center w-24 text-sm" style="cursor:pointer;">
+              <div v-show="state.gamen_mode" @click="scrollDate(task.start_date)" class="transition duration-0 ease-in-out transform hover:scale-105 hover:border-none border-r flex items-center justify-center w-24 text-sm" style="cursor:pointer;">
                 {{task.start_date}}
               </div>
-              <div @click="scrollDate(task.end_date)" class="transition duration-1000 ease-in-out transform hover:scale-110 border-r flex items-center justify-center w-24 text-sm" style="cursor:pointer;">
+              <div v-show="state.gamen_mode" @click="scrollDate(task.end_date)" class="transition duration-0 ease-in-out transform hover:scale-105 hover:border-none border-r flex items-center justify-center w-24 text-sm" style="cursor:pointer;">
                 {{task.end_date}}
               </div>
-              <div class="border-r flex items-center justify-center w-16 text-sm">
+              <div v-show="state.gamen_mode" class="border-r flex items-center justify-center w-16 text-sm">
                 {{task.incharge_user}}
               </div>
-              <div class="border-r flex items-center justify-center w-12 text-sm">
+              <div v-show="state.gamen_mode" class="border-r flex items-center justify-center w-12 text-sm">
                 {{task.percentage}}%
               </div>
-              <div class="border-r flex items-center justify-center w-12 text-sm">
+              <div v-show="state.gamen_mode" class="border-r flex items-center justify-center w-12 text-sm">
                 <button @click="editTask(task)" class="bg-green-500 hover:bg-green-700 flex text-white font-bold rounded-lg py-1.5 px-2 w-10">
                   <span class="font-bold text-xs">
                     更新
                   </span>
                 </button>
               </div>
-              <div class="border-r flex items-center justify-center w-12 text-sm">
+              <div v-show="state.gamen_mode" class="border-r flex items-center justify-center w-12 text-sm">
                 <button @click="addDetail(task)" class="flex text-white font-bold rounded-lg py-1.5 px-2 w-10 items-center justify-center" 
-                 :class="(task.detail === '' || task.detail == null) ? 'bg-blue-500' : 'bg-red-500'">
+                 :class="(task.detail === '' || task.detail == null) ? 'bg-blue-500 hover:bg-blue-900' : 'bg-red-500 hover:bg-red-900'">
                   <svg v-if="!(task.detail === '' || task.detail == null)" xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
                     <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
                   </svg>
@@ -345,8 +367,9 @@
               <div v-for="(day, index) in calendar.days" :key="index">
                 <div 
                   class="border-r border-b h-12 absolute flex items-center justify-center flex-col font-bold text-xs"
-                  :class="{'bg-blue-100': day.dayOfWeek === '土', 'bg-red-100': day.dayOfWeek === '日', 'bg-red-600 text-white': calendar.year === state.today.year() && calendar.month === state.today.month() && day.day === state.today.date()}"
-                  :style="`width:${state.block_size}px;left:${day.block_number*state.block_size}px`">
+                  :class="{'bg-yellow-100': day.dayOfWeek === '休', 'bg-blue-100': day.dayOfWeek === '土', 'bg-red-100': day.dayOfWeek === '日', 'bg-red-600 text-white': calendar.year === state.today.year() && calendar.month === state.today.month() +1 && day.day === state.today.date()}"
+                  :style="`width:${state.block_size}px;left:${day.block_number*state.block_size}px;cursor:pointer`"
+                  @click="addHoliday(calendar.year, calendar.month, day.day, day.dayOfWeek)">
                   <span>{{ day.day }}</span>
                   <span>{{ day.dayOfWeek }}</span>
                 </div>
@@ -359,13 +382,12 @@
               <div v-for="(day,index) in calendar.days" :key="index">
                 <div 
                   class="border-r border-b absolute flex justify-center"
-                  :class="{'bg-blue-100': day.dayOfWeek === '土', 'bg-red-100': day.dayOfWeek === '日'}" style="pointer-events: none;"
+                  :class="{'bg-yellow-100': day.dayOfWeek === '休', 'bg-blue-100': day.dayOfWeek === '土', 'bg-red-100': day.dayOfWeek === '日'}" style="pointer-events: none;"
                   :style="`width:${state.block_size}px;left:${day.block_number*state.block_size}px;height:${calendarViewHeight}px`">
-<!--
-                    <div class="h-6 text-red-500 px-1 text-s font-bold cursor-pointer" @click="taskTime(calendar.year, calendar.month, day.day, day.task_time)" style="pointer-events: auto;">
+          <!-- 勤務時間管理 -->
+<!--                    <div class="h-6 text-red-500 px-1 text-s font-bold cursor-pointer" @click="taskTime(calendar.year, calendar.month, day.day, day.task_time)" style="pointer-events: auto;">
                       {{ day.task_time }}
-                    </div>
--->
+                    </div>-->
                 </div>
               </div>
             </div>
@@ -376,11 +398,11 @@
           <!-- 現行タスクバー --> <!--@dblclick="dispProgress(bar.task)"-->
           <div v-for="(bar, index) in taskBars" :key="index">
             <div :style="bar.style" class="rounded-lg absolute h-5 z-20" v-if="bar.task.cat === 'task'" style="cursor:grab"
-              @mousedown="mouseDownMove(bar.task)" @dblclick="addDetail(bar.task)"
-              :class="{'bg-indigo-400':bar.task.task_kbn == 1}, {'bg-indigo-400':bar.task.task_kbn == 2}, {'bg-blue-400':bar.task.task_kbn == 3},
-                    {'bg-blue-400':bar.task.task_kbn == 4}, {'bg-green-500':bar.task.task_kbn == 5}, {'bg-red-400':bar.task.task_kbn == 6},
-                    {'bg-pink-400':bar.task.task_kbn == 7}, {'bg-purple-400':bar.task.task_kbn == 8}, {'bg-yellow-400':bar.task.task_kbn == 9},
-                    {'bg-yellow-700':bar.task.task_kbn == 10}"
+              @mousedown="mouseDownMove(bar.task)" @mouseenter="hoverDetail(bar.task, bar.style)" @mouseleave="hoverOutDetail()" @dblclick="addDetail(bar.task)"
+              :class="{'bg-sky-300':bar.task.task_kbn == 1}, {'bg-blue-400':bar.task.task_kbn == 2},   {'bg-indigo-500':bar.task.task_kbn == 3},
+                      {'bg-red-400':bar.task.task_kbn == 4}, {'bg-orange-400':bar.task.task_kbn == 5}, {'bg-yellow-400':bar.task.task_kbn == 6},
+                      {'bg-lime-500':bar.task.task_kbn == 7},{'bg-yellow-700':bar.task.task_kbn == 8}, {'bg-red-700':bar.task.task_kbn == 9},
+                      {'bg-yellow-200':bar.task.task_kbn == 10}"
             >
               <div class="w-full h-full" style="pointer-events: none;">
                 <div class="h-full rounded-l-lg" 
@@ -398,7 +420,9 @@
           <!-- 履歴タスクバー -->
           <div v-for="(bar, index) in taskRireki" :key="index">
           <div v-for="(rbar, index) in bar" :key="index">
-            <div @dblclick="addRirekiDetail(rbar.task.id, rbar.rireki.start_date)" :style="rbar.style" class="absolute h-5 back border-l border-r border-black"  v-if="rbar.rireki.cat === 'task'">
+            <div @mouseenter="hoverDetail(rbar.rireki, rbar.style)" @mouseleave="hoverOutDetail()" @dblclick="addRirekiDetail(rbar.task.id, rbar.rireki.start_date)" 
+                  :style="rbar.style" class="absolute h-5 back border-l border-r border-black"  v-if="rbar.rireki.cat === 'task'"
+            >
               <div class="w-full h-full" style="pointer-events: none;"></div>
             </div>
           </div>
@@ -453,27 +477,27 @@
         categories: [
           {
           id: 1,
-          name: 'COINS',
+          name: '配車サポート',
           collapsed: false,
           }, 
           {
           id: 2,
-          name: 'PRIMAS',
+          name: 'ダイハツ',
           collapsed: false,
           }
         ],
         tasks:[],
         tasks_kbn: [
-          {id: 1, kbn: '事前調査'},
-          {id: 2, kbn: '改訂依頼書'},
-          {id: 3, kbn: '設計'},
-          {id: 4, kbn: 'テスト仕様書'},
-          {id: 5, kbn: '製造'},
-          {id: 6, kbn: 'テスト'},
-          {id: 7, kbn: '改訂資料作成'},
-          {id: 8, kbn: 'ウォークスルー'},
+          {id: 1, kbn: '要件定義'},
+          {id: 2, kbn: '基本設計'},
+          {id: 3, kbn: '詳細設計'},
+          {id: 4, kbn: '製造'},
+          {id: 5, kbn: '単体テスト'},
+          {id: 6, kbn: '結合テスト'},
+          {id: 7, kbn: '総合テスト'},
+          {id: 8, kbn: 'レビュー'},
           {id: 9, kbn: '切替'},
-          {id: 10, kbn: 'フォロー'},
+          {id: 10, kbn: 'その他'},
         ],
         detail_show: false,
         detail: {
@@ -497,11 +521,18 @@
           day  : 0,
           time : 0,
         },
-        hover_flg: false,
+        gamen_mode : true,
+        rireki_flg : false,
+        holiday:[],
+        detail_hover : false,
+        hover_left : '',
+        hover_top  : '', 
+        detail_hover_name : '',
       });
       
-      const task = Vue.ref(null);
+      const refTask = Vue.ref(null);
       const refCalendar = Vue.ref(null);
+      const refDetail = Vue.ref(null);
       
 //***************************************************************************************
 //  引数で渡された年月の日付一覧を返す
@@ -511,11 +542,22 @@
         let days = []
         let date = moment(`${year}-${month}-01`);
         let num = date.daysInMonth();
-
+        let jholidays = JSON.parse(window.localStorage.getItem('holiday'));
+        let youbi = '';
+        
         for (let i = 0; i < num; i++) {
+          youbi = dayOfWeek[date.day()]
+          if (jholidays != null) {
+            //休日設定
+            jholidays.map(j => {
+              if (j.year == year && ('00' + j.month).slice(-2) == month && j.day == (i + 1)) {
+                youbi = '休'
+              } 
+            }) 
+          }
           days.push({
             day: date.date(),
-            dayOfWeek: dayOfWeek[date.day()],
+            dayOfWeek: youbi,
             block_number,
             task_time: 0
           })
@@ -531,14 +573,14 @@
       const getCalendar = () => {
         
         //ストレージ内のカレンダー取得
-//        let calendarData = JSON.parse(window.localStorage.getItem('calendar'));
+//        let calendarData = JSON.parse(window.localStorage.getItem('calendar'));//
         
         //現在月の＋－２
-        state.start_month = moment().add(-2, 'months').format('YYYY-MM');
+        state.start_month = moment().add(-3, 'months').format('YYYY-MM');
         state.end_month = moment().add(2, 'months').format('YYYY-MM');
           
         //ストレージ内のデータなし
-//        if (!calendarData) {
+//        if (!calendarData) {//
           let block_number = 0;
           let days;
           let start_month = moment(state.start_month)
@@ -550,7 +592,7 @@
             state.calendars.push({
               date: start_month.format('YYYY年MM月'),
               year: start_month.year(),
-              month: start_month.month(), //month(), 0,1..11と表示
+              month: start_month.month() + 1, //month(), 0,1..11と表示
               start_block_number: block_number,
               calendar: days.length,
               days: days
@@ -559,15 +601,15 @@
             block_number = days[days.length - 1].block_number
             block_number++;
           }
-//          window.localStorage.setItem('calendar', JSON.stringify(state.calendars))
+//          window.localStorage.setItem('calendar', JSON.stringify(state.calendars))//
         //ストレージ内のデータあり
-//        } else {
-//          state.calendars = calendarData;
-//          //ブロックナンバー設定
-//          let maxIndex =  state.calendars.length - 1;
-//          block_number = state.calendars[maxIndex].calendar + state.calendars[maxIndex].start_block_number
-//        }
-//        console.log(calendars)
+//        } else {//
+//          state.calendars = calendarData;//
+          //ブロックナンバー設定
+//          let maxIndex =  state.calendars.length - 1;//
+//          block_number = state.calendars[maxIndex].calendar + state.calendars[maxIndex].start_block_number//
+//        }//
+//        console.log(state.calendars)
         return block_number;
       };
 //***************************************************************************************
@@ -583,8 +625,8 @@
       const getWindowSize = () => {
         state.inner_width = window.innerWidth
         state.inner_height = window.innerHeight
-        state.task_width = task.value.offsetWidth
-        state.task_height = task.value.offsetHeight
+        state.task_width = refTask.value.offsetWidth
+        state.task_height = refTask.value.offsetHeight
       };
 
 //***************************************************************************************
@@ -621,13 +663,29 @@
       });
       
 //***************************************************************************************
+//  カレンダーモードと通常モードの切替
+//***************************************************************************************
+      const calendarViewWidthChange = (mode) => {
+        if (mode == true) {
+          state.gamen_mode = false;
+          state.task_width -= 400;
+          todayPosition();
+        } else {
+          state.gamen_mode = true
+          state.task_width += 400;
+          todayPosition();
+        }
+      }
+      
+//***************************************************************************************
 //  今日の日付までのスクロールpx
 //***************************************************************************************
       const scrollDistance = Vue.computed(() => {
         let start_date = moment(state.start_month);
         let between_days = moment().diff(start_date, 'days')
-      //console.log(refCalendar);
-        return (between_days + 1) * state.block_size - refCalendar.value.clientWidth / 2;
+//        console.log(calendarViewWidth.value);
+//        return (between_days + 1) * state.block_size - refCalendar.value.clientWidth / 2;
+        return (between_days + 1) * state.block_size - calendarViewWidth.value / 2;
       });
       
 //***************************************************************************************
@@ -695,8 +753,9 @@
         lists.sort((a, b) => {
           if(a.category_id === b.category_id) {
             return (a.incharge_user > b.incharge_user) ? 1 : (a.incharge_user < b.incharge_user) ? -1 : //担当者
-                   (a.task_kbn > b.task_kbn) ? 1 : (a.task_kbn < b.task_kbn) ? -1 :                   //業務区分
-                   (a.start_date > b.start_date) ? 1 : (a.start_date < b.start_date) ? -1 : 0         //開始日時
+                   (a.start_date > b.start_date) ? 1 : (a.start_date < b.start_date) ? -1 :            //開始日時
+                   (a.task_kbn > b.task_kbn) ? 1 : (a.task_kbn < b.task_kbn) ? -1 : 0                  //業務区分
+
           }
         })
 //        console.table(lists);
@@ -931,52 +990,57 @@
         state.formError = false
         if (formCheck() === 1) {return};
         let rireki = [];
-        //既存データを修正して追加時
+        //既存データに対して追加時
         if (form) {          
           let delete_index;
           let delete_rireki;
           state.tasks.map((task, index) => {
             if (task.id == form.id) {
               delete_index = index
-              //修正前の開始・終了日時を履歴として追加
+              //現行タスクを履歴として追加
               rireki.push({
                 cat: 'task',
+                id        : task.id,
+                name      : task.name,
+                task_kbn  : task.task_kbn,
+                kaitei_kbn: task.kaitei_kbn,
                 start_date: task.start_date,
                 end_date  : task.end_date,
-                task_kbn  : task.task_kbn,
-                detail    : task.detail
+                incharge_user : task.incharge_user,
+                percentage: task.percentage,
+                detail    : task.detail,
+                category_id : task.category_id
               })
-              //空データ削除
-              task.task_rireki.map((rireki, index) => {
-                if (rireki.start_date === '') {
-                  delete_rireki = index
-                }
-              })
-              if (delete_rireki) { 
-                task.task_rireki.splice(delete_rireki, 1)
-              }
-              task.task_rireki.push(...rireki)
-//              console.log(task)
+              task.task_rireki.push(...rireki);
+//               //空データ削除
+//               task.task_rireki.map((rireki, index) => {
+//                 if (rireki.start_date === '') {
+//                   delete_rireki = index
+//                 }
+//               })
+//               if (delete_rireki) { 
+//                 task.task_rireki.splice(delete_rireki, 1)
+//               }
             } 
           })
-          //修正前を削除
+          //現行タスクを削除
           state.tasks.splice(delete_index, 1)
-          //修正後を追加
+          //新規タスクを追加
           state.form.detail = ''
+          let kbn = state.tasks_kbn.filter(k => k.id == state.form.task_kbn);
+          state.form.kaitei_kbn = kbn[0].kbn
           state.tasks.push(state.form)
-          
-        //新しいデータを追加時
+      
+        //新規タスクとして追加
         } else {
-          rireki.push({
-            cat        : 'task',
-            start_date : '',
-            end_date   : '',
-            task_kbn   : '',
-            detail     : ''
+          rireki.push({                          // ここから
+              cat        : 'task',
+              start_date : ''                   // 履歴バー高さ調整用の空履歴
           })
-//          console.log(state.form)
           state.form.task_rireki = []
-          state.form.task_rireki.push(...rireki)
+          state.form.task_rireki.push(...rireki) // ここまで
+		  let kbn = state.tasks_kbn.filter(k => k.id == state.form.task_kbn);
+          state.form.kaitei_kbn = kbn[0].kbn
           state.tasks.push(state.form)
         }
         window.localStorage.setItem('task', JSON.stringify(state.tasks))
@@ -987,6 +1051,10 @@
       const editTask = (task) => {
         state.update_mode = true;
         state.show = true;
+        state.rireki_flg = false;
+        if(task.task_rireki[task.task_rireki.length - 1].start_date !== '') {
+        	state.rireki_flg = true;
+        }
         Object.assign(state.form, task);
       };
 //----更新ボタン----
@@ -1010,7 +1078,37 @@
         state.form ={};
         state.show = false;
       };
-
+//----１つ前に戻るボタン----      
+	  const historyBack = (id) => {
+		let saishin_rireki;
+		let rireki;
+		let delete_index;
+		state.tasks.map((task, index) => {
+			if(task.id == id) {
+				delete_index = index;
+				//最新履歴を保持
+				let max_index = task.task_rireki.length - 1;
+				saishin_rireki = task.task_rireki[max_index];
+				//最新履歴を削除
+				task.task_rireki.splice(max_index, 1)
+//				console.log(task)
+				//最新履歴以外の履歴を保持
+				rireki = task.task_rireki;
+			}
+		})
+		//現行タスクを削除
+		state.tasks.splice(delete_index, 1);
+//		console.log(state.tasks);
+		//最新履歴を現行タスクに移動
+		state.tasks.push(saishin_rireki);
+		//履歴を追加
+		state.tasks.map(task => {
+			if(task.id == id) task.task_rireki = rireki;
+		});
+		window.localStorage.setItem('task', JSON.stringify(state.tasks));
+//         state.form ={};
+//         state.show = false;
+      }
 //***************************************************************************************
 //  入力チェック
 //***************************************************************************************
@@ -1149,7 +1247,7 @@
 //***************************************************************************************
       const downloadCSV = () => {
         //ヘッダー部
-        let csv = '\ufeff' + 'ID, 改訂名, 改訂区分, 担当者, 開始日, 終了日, 進捗度, 詳細\n'
+        let csv = '\ufeff' + 'ID, 作業名, 作業区分, 担当者, 開始日, 終了日, 進捗度, 詳細\n'
         //データ部
         state.tasks.forEach(task => {
           let replace_detail=''
@@ -1159,6 +1257,18 @@
           let line = task.id + ',' + task.name + ',' + task.kaitei_kbn + ',' + task.incharge_user + 
           ',' + task.start_date + ',' + task.end_date + ',' + task.percentage + ',' + replace_detail + '\n'
           csv += line
+          
+          task.task_rireki.forEach(task => {
+        	if(task.start_date !== '' && task.start_date != null) {
+		        let replace_detail=''
+		        if(task.detail) {
+		          replace_detail = task.detail.replace(/\n/g, ' ')
+		        }
+		        let line = task.id + ',' + task.name + ',' + task.kaitei_kbn + ',' + task.incharge_user + 
+		        ',' + task.start_date + ',' + task.end_date + ',' + task.percentage + ',' + replace_detail + '\n'
+		        csv += line
+        	}
+          })
         })
         
         let blob = new Blob([csv], { type: 'text/csv' })
@@ -1197,16 +1307,17 @@
                   
                   //改訂区分ごとに色を変える
                   switch(rireki.task_kbn) {
-                    case 1: 
-                    case 2: task_kbn = 'rgba(129, 140, 248)'; break;
-                    case 3: 
-                    case 4: task_kbn = 'rgba(96, 165, 250)'; break;
-                    case 5: task_kbn = 'rgba(16, 185, 129)'; break;
-                    case 6: task_kbn = 'rgba(248, 113, 113)'; break;
-                    case 7: task_kbn = 'rgba(244, 114, 182)'; break;
-                    case 8: task_kbn = 'rgba(167, 139, 250)'; break;
-                    case 9: task_kbn = 'rgba(251, 191, 36)'; break;
-                    case 10: task_kbn = 'rgba(180, 83, 9)'; break;
+                    case 1: task_kbn = 'rgba(125 211 252)';		break;
+                    case 2: task_kbn = 'rgba(96 165 250)';		break;
+                    case 3: task_kbn = 'rgba(99 102 241)';		break;
+                    case 4: task_kbn = 'rgba(248 113 113)'; 	break;
+                    case 5: task_kbn = 'rgba(251 146 60)'; 		break;
+                    case 6: task_kbn = 'rgba(251 191 36)'; 		break;
+                    case 7: task_kbn = 'rgba(132 204 22)';		break;
+                    case 8: task_kbn = 'rgba(161 98 7)';		  break;
+                    case 9: task_kbn = 'rgba(185 28 28)';		  break;
+                    case 10: task_kbn = 'rgba(254 240 138)';	break;
+                    case 11: task_kbn = 'rgba(253 230 138)';	break;
                   }
                   
                   style = {
@@ -1269,14 +1380,98 @@
         let start_date = moment(state.start_month);
         let task_date = moment(date)
         let between_date = task_date.diff(start_date, 'days');
-        let scroll = (between_date + 1) * state.block_size - refCalendar.value.clientWidth / 2;
+//      let scroll = (between_date + 1) * state.block_size - refCalendar.value.clientWidth / 2;
+        let scroll = (between_date + 1) * state.block_size - calendarViewWidth.value / 2;
         $('#gantt-calendar').animate({scrollLeft: scroll}, 300);
+      }
+
+//***************************************************************************************
+//  選択した日にちを休日にする
+//***************************************************************************************
+      const addHoliday = (year, month, pday, youbi) => {
+
+        if (youbi == '土' || youbi == '日') {
+          return;
+        }
+        state.calendars.map(calendar => {
+          if (calendar.year === year  && calendar.month === month) {
+            calendar.days.map(day => {
+              if (day.day === pday) {
+                //休日と選択した日にちを付け合せる
+                state.holiday = JSON.parse(window.localStorage.getItem('holiday'));
+                if (state.holiday == null) {
+                  //初期設定
+                  state.holiday = [];
+                  day.dayOfWeek = '休';
+                  state.holiday.push({
+                    year  : year,
+                    month : month,
+                    day   : pday,
+                  })
+                  window.localStorage.setItem('holiday', JSON.stringify(state.holiday))
+                } else {
+                  let holiday_index = state.holiday.findIndex(j => j.year == year && j.month == month && j.day == pday);
+                  //休日を選択していない場合、休日を設定
+                  if (holiday_index == -1) {
+                    day.dayOfWeek = '休';
+                    state.holiday.push({
+                      year  : year,
+                      month : month,
+                      day   : pday,
+                    })
+                    window.localStorage.setItem('holiday', JSON.stringify(state.holiday))
+                  //休日を選択した場合、平日を設定
+                  } else {
+                    let h_youbi = moment([year,month,pday]).format('dddd')
+                    day.dayOfWeek = h_youbi
+                    state.holiday.splice(holiday_index, 1);
+                    window.localStorage.setItem('holiday', JSON.stringify(state.holiday))
+                  }
+                }
+              }
+            })
+          }
+        })
+      }
+    
+//***************************************************************************************
+//  選択したタスクバーの詳細をホバー表示する
+//***************************************************************************************
+      const hoverDetail = (task, style) => {
+
+        if(task.detail != '' && task.detail != null) {
+          state.hover_left = event.pageX;
+          state.detail_hover_name = task.detail;
+          state.detail_hover = true;
+          //一度DOMの作成完了を待ってからrefDetail.value.clientHeightを取得する
+          Vue.nextTick(() => { 
+            //詳細表示の行数を取得
+            let detail_gyou = Math.ceil(((refDetail.value.clientHeight - 20) / 16))
+            state.hover_top  = (parseInt(style.top.replace('px', ''))  - (detail_gyou * 16) + 100);
+          });
+        }
+      }
+
+      const hoverOutDetail = () => {
+        state.detail_hover = false;
+      }
+
+//***************************************************************************************
+//  選択した作業名をコピーする
+//***************************************************************************************
+      const copyText = (name) => {
+        let dummy_area = $('<textarea>' + name + '</textarea>');
+        $('body').append(dummy_area);
+        dummy_area.select();
+        document.execCommand('copy');
+        dummy_area.remove();
       }
 
 //***************************************************************************************
 //  マウント
 //***************************************************************************************
       Vue.onMounted(() => {
+        moment.lang("ja", {weekdays: ["日","月","火","水","木","金","土"]});
         getCalendar();
         getWindowSize();
         window.addEventListener('resize', getWindowSize);
@@ -1289,14 +1484,16 @@
       
       return {
         state,
-        task,
+        refTask,
         refCalendar,
+        refDetail,
         getDays,
         getCalendar,
         todayPosition,
         getWindowSize,
         windowSizeCheck,
         calendars,
+        calendarViewWidthChange,
         calendarViewWidth,
         calendarViewHeight,
         scrollDistance,
@@ -1316,6 +1513,7 @@
         editTask,
         updateTask,
         deleteTask,
+        historyBack,
         formCheck,
         addDetail,
         saveDetail,
@@ -1330,6 +1528,10 @@
         addRirekiDetail,
         percent,
         scrollDate,
+        addHoliday,
+        hoverDetail,
+        hoverOutDetail,
+        copyText,
       };
     },
   }).mount('#app');
@@ -1342,7 +1544,7 @@
     right: 0;
     display: flex;
     justify-content: center;
-    margin-top: 50px;
+    margin-top: 10px;
   }
 
   .overlay {
@@ -1359,11 +1561,19 @@
     background-color: white;
     position: relative;
     border-radius: 10px;
-    padding: 40px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    padding-left: 40px;
+    padding-right: 40px;
   }
+
   .back {
-//    background-color: orange;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath fill-rule='evenodd' d='M0 0h4v4H0V0zm4 4h4v4H4V4z'/%3E%3C/g%3E%3C/svg%3E");
+  }
+  
+  .main-back {
+  	background-color: #ffffff;
+	  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4' viewBox='0 0 4 4'%3E%3Cpath fill='%239C92AC' fill-opacity='0.4' d='M1 3h1v1H1V3zm2-2h1v1H3V1z'%3E%3C/path%3E%3C/svg%3E");
   }
   
   .v-enter-to, .v-leave-from {
@@ -1380,4 +1590,48 @@
   .fade-enter-from, .fade-leave-to {
     opacity: 0;
   }
+
+  .hover-content {
+    position: fixed;
+    display: inline-block;
+    justify-content: center;
+    align-items: center;
+    background-color: rgb(255, 255, 255);
+    border-style: dashed;
+    border-color: rgb(148 163 184);
+    border-width: 2px;
+    border-radius: 10px;
+    padding:   10px;
+    min-width : 100px;
+    max-width : 350px;
+    max-height : 100%;
+    z-index: 20;
+  }
+
+  /* .balloon1 {
+    position: absolute;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgb(255, 255, 255);
+    border-style: dashed;
+    border-color: rgb(148 163 184);
+    border-width: 2px;
+    padding: 10px;
+    min-width: 150px;
+    max-width: 350px;
+    z-index: 20;
+    border-radius: 10px;
+}
+
+  .balloon1:before {
+    content: "";
+    position: absolute;
+    top: 80%;
+    left: 10%;
+    margin-left: -15px;
+    border: 10px solid transparent;
+    border-top: 35px solid #e0edff;
+    transform: rotate(35deg);
+  } */
 </style>

@@ -15,7 +15,7 @@
   <div id="app" class="main-back overflow-hidden">
     <div id="gantt-header" class="h-12 p-2 flex items-center">
       <h1 class="text-xl font-bold Ordinal">配車サポート</h1>
-      <button @click="addTask()" class="transition duration-500 ease-in-out transform hover:scale-110 bg-indigo-700 hover:bg-indigo-900 text-sm text-white py-1 px-4 rounded-lg ml-4 w-28 h-10 xl:w-24 xl:text-base">
+      <button @click="addTask()" class="transition duration-500 ease-in-out transform hover:scale-110 bg-indigo-700 hover:bg-indigo-900 text-sm text-white py-1 px-4 rounded-lg ml-4 xl:w-24 xl:text-base">
         <span class="font-bold">
           追加
         </span>
@@ -26,6 +26,13 @@
       </div>
       <div class="h-8 ml-5">
         <button @click="downloadCSV()" class="bg-green-500 hover:bg-green-700 text-white font-bold py-1 px-4 rounded-lg items-center">CSV出力</button>
+      </div>
+      <div class="h-8 ml-5">
+        <button @click="downloadJSON()" class="bg-blue-500 hover:bg-blue-700 border-r-2 text-white font-bold py-1 px-2 rounded-l-lg items-center">JSON出力</button>
+      </div>
+      <div class="h-8">
+        <button @click="uploadJSON()"   class="bg-blue-500 hover:bg-blue-700 border-l-2 text-white font-bold py-1 px-2 rounded-r-lg items-center">JSON読込</button>
+        <input type="file" id="upload_json" accept="application/JSON" style="display: none" />
       </div>
       <div class="h-8 ml-5">
       	<button @click="calendarViewWidthChange(state.gamen_mode)" class="bg-yellow-400 hover:bg-yellow-700 text-white font-bold py-1 px-4 rounded-lg items-center">画面切替</button>
@@ -126,7 +133,7 @@
       <teleport to="#form">
       <transition name="fade">
         <div class="hover-content" v-show="state.detail_hover" :style="`left:${state.hover_left}px;top:${state.hover_top}px`" ref="refDetail">
-          <pre class="text-xs font-sans font-bold">{{ state.detail_hover_name }}</pre>
+          <pre class="font-bold text-xs font-sans">{{ state.detail_hover_name }}</pre>
         </div>
       </transition>
       </teleport>
@@ -1277,6 +1284,47 @@
         link.download = moment().format('YYYYMMDD') + '.csv'
         link.click()
       }
+//***************************************************************************************
+//  JSON出力
+//***************************************************************************************
+      const downloadJSON = () => {
+        
+        task_json = window.localStorage.getItem('task');
+        
+        let blob = new Blob([task_json], { type: 'text/plain' })
+        let link = document.createElement('a')
+        link.href = window.URL.createObjectURL(blob)
+        link.download = moment().format('YYYYMMDD') + '_task.json'
+        link.click()
+      }
+
+//***************************************************************************************
+//  JSON読込
+//***************************************************************************************
+      const uploadJSON = () => {
+
+        $('#upload_json').click();
+        $('#upload_json').on('change', function() {
+          if(this.files.length) {
+            if(!this.files[0].name.toLowerCase().endsWith('json')) {
+              alert('拡張子がJSONではありません。');
+              return;
+            }
+            let reader = new FileReader();
+            reader.readAsText(this.files[0], 'UTF-8');
+            reader.onload = function() {
+              try {
+                JSON.parse(reader.result);
+                window.localStorage.setItem('task', reader.result);
+              } catch (e) {
+                alert('ファイル内容がJSON形式ではありません。');
+                return;
+              }
+            }
+          }
+        })
+
+      }
 
 //***************************************************************************************
 //  タスク履歴表示
@@ -1532,6 +1580,8 @@
         hoverDetail,
         hoverOutDetail,
         copyText,
+        downloadJSON,
+        uploadJSON,
       };
     },
   }).mount('#app');
@@ -1603,7 +1653,7 @@
     border-radius: 10px;
     padding:   10px;
     min-width : 100px;
-    max-width : 350px;
+    max-width : 100%;
     max-height : 100%;
     z-index: 20;
   }

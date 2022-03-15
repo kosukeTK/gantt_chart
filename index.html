@@ -37,6 +37,13 @@
       <div class="h-8 ml-5">
       	<button @click="calendarViewWidthChange(state.gamen_mode)" class="bg-yellow-400 hover:bg-yellow-700 text-white font-bold py-1 px-4 rounded-lg items-center">画面切替</button>
       </div>
+      <div class="flex items-center h-8 ml-5">
+        <svg @click="state.config_show=true" xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+      </div>
+
 <!--
       <div class="h-12 ml-36 border border-red-600">
         <div class="flex">
@@ -134,6 +141,51 @@
       <transition name="fade">
         <div class="hover-content" v-show="state.detail_hover" :style="`left:${state.hover_left}px;top:${state.hover_top}px`" ref="refDetail">
           <pre class="font-bold text-xs font-sans">{{ state.detail_hover_name }}</pre>
+        </div>
+      </transition>
+      </teleport>
+      <!-- 設定表示 -->
+      <teleport to="#form">
+      <transition name="fade">
+        <div class="base z-30" v-show="state.config_show">
+          <div class="overlay" v-show="state.config_show" @click="saveConfig()"></div>
+          <div class="content grid grid-cols-1 divide-y" v-show="state.config_show">
+            <div class="mt-2">
+              <label for="kintai" class="text-base font-sans">勤怠管理(不使用)</label>
+              <input type="checkbox" id="kintai" v-model="state.config.kintai_show" disabled>
+            </div>
+            <div class="mt-2">
+              <label class="text-base font-sans">月表示</label>
+              <div class="flex justify-between items-center">
+                <label class="text-base font-sans">過去月</label>
+                <button class="border-none" @click="state.config.month_pass -= 1">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+                <button class="border-none" @click="state.config.month_pass += 1">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+                <p>{{ state.config.month_pass }}</p>
+              </div>
+              <div class="flex justify-between items-center">
+                <label class="text-base font-sans">未来月</label>
+                <button class="border-none" @click="state.config.month_feture -= 1">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+                <button class="border-none" @click="state.config.month_feture += 1">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+                <p>{{ state.config.month_feture }}</p>
+              </div>
+            </div>
+          </div>
         </div>
       </transition>
       </teleport>
@@ -392,9 +444,9 @@
                   :class="{'bg-yellow-100': day.dayOfWeek === '休', 'bg-blue-100': day.dayOfWeek === '土', 'bg-red-100': day.dayOfWeek === '日'}" style="pointer-events: none;"
                   :style="`width:${state.block_size}px;left:${day.block_number*state.block_size}px;height:${calendarViewHeight}px`">
           <!-- 勤務時間管理 -->
-<!--                    <div class="h-6 text-red-500 px-1 text-s font-bold cursor-pointer" @click="taskTime(calendar.year, calendar.month, day.day, day.task_time)" style="pointer-events: auto;">
+                    <div v-show="state.config.kintai_show" class="h-6 text-red-500 px-1 text-s font-bold cursor-pointer" @click="taskTime(calendar.year, calendar.month, day.day, day.task_time)" style="pointer-events: auto;">
                       {{ day.task_time }}
-                    </div>-->
+                    </div>
                 </div>
               </div>
             </div>
@@ -535,6 +587,12 @@
         hover_left : '',
         hover_top  : '', 
         detail_hover_name : '',
+        config_show : false,
+        config : {
+          kintai_show : false,
+          month_pass  : -2,
+          month_feture: 2,
+        }
       });
       
       const refTask = Vue.ref(null);
@@ -581,10 +639,13 @@
         
         //ストレージ内のカレンダー取得
 //        let calendarData = JSON.parse(window.localStorage.getItem('calendar'));//
-        
+        let config       = JSON.parse(window.localStorage.getItem('config'));
+        if(config != null) {
+          state.config = config;
+        }
         //現在月の＋－２
-        state.start_month = moment().add(-3, 'months').format('YYYY-MM');
-        state.end_month = moment().add(2, 'months').format('YYYY-MM');
+        state.start_month = moment().add(state.config.month_pass, 'months').format('YYYY-MM');
+        state.end_month = moment().add(state.config.month_feture, 'months').format('YYYY-MM');
           
         //ストレージ内のデータなし
 //        if (!calendarData) {//
@@ -1316,6 +1377,7 @@
               try {
                 JSON.parse(reader.result);
                 window.localStorage.setItem('task', reader.result);
+                window.location.reload();
               } catch (e) {
                 alert('ファイル内容がJSON形式ではありません。');
                 return;
@@ -1516,6 +1578,24 @@
       }
 
 //***************************************************************************************
+//  設定を保存する
+//***************************************************************************************
+      const saveConfig = () => {
+
+        let config = JSON.parse(window.localStorage.getItem('config'));
+        if(config != null) {
+          if(config.month_pass === state.config.month_pass &&
+          config.month_feture === state.config.month_feture) {
+            state.config_show = false;
+            return;
+          }
+        }
+        window.localStorage.setItem('config', JSON.stringify(state.config));
+        state.config_show = false;
+        window.location.reload();
+      }
+
+//***************************************************************************************
 //  マウント
 //***************************************************************************************
       Vue.onMounted(() => {
@@ -1582,6 +1662,7 @@
         copyText,
         downloadJSON,
         uploadJSON,
+        saveConfig,
       };
     },
   }).mount('#app');

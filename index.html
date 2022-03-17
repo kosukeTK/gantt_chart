@@ -1602,6 +1602,13 @@
         moment.lang("ja", {weekdays: ["日","月","火","水","木","金","土"]});
         getCalendar();
         getWindowSize();
+        window.document.oncontextmenu = function () {return false;}
+        window.document.onkeydown = function(event) {
+          if(event.keyCode == 123) {
+            event.keyCode = null;
+            event.returnValue = false;
+          }
+        };
         window.addEventListener('resize', getWindowSize);
         window.addEventListener('wheel', windowSizeCheck);
         window.addEventListener('mousemove', mouseMove);

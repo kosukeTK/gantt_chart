@@ -9,12 +9,12 @@
   <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
-  <title>配車サポート スケジュール管理</title>
+  <title>ガントチャート</title>
 </head>
 <body>
   <div id="app" class="main-back overflow-hidden">
     <div id="gantt-header" class="h-12 p-2 flex items-center">
-      <h1 class="text-xl font-bold Ordinal">配車サポート</h1>
+      <h1 class="text-xl font-bold Ordinal">スケジュール管理</h1>
       <button @click="addTask()" class="transition duration-500 ease-in-out transform hover:scale-110 bg-indigo-700 hover:bg-indigo-900 text-sm text-white py-1 px-4 rounded-lg ml-4 xl:w-24 xl:text-base">
         <span class="font-bold">
           追加
@@ -195,7 +195,7 @@
         <div class="base z-30" v-show="state.show">
           <div class="overlay" v-show="state.show" @click="state.show=false"></div>
           <div class="content" v-show="state.show">
-            <h2 class="fond-bold">タスクの追加</h2>
+            <h2 class="mx-36 fond-bold font-sans">タスク</h2>
             <div v-show="state.formError">
               <label class="bg-yellow-300 text-red-500 py-0 px-6">全て入力してください。</label>
             </div>
@@ -367,9 +367,9 @@
               </div>
               <div class="border-r flex items-center justify-center w-24 text-sm" 
                 :class="{'bg-sky-300':task.task_kbn == 1}, {'bg-blue-400':task.task_kbn == 2},   {'bg-indigo-500':task.task_kbn == 3},
-                        {'bg-red-400':task.task_kbn == 4}, {'bg-orange-400':task.task_kbn == 5}, {'bg-yellow-400':task.task_kbn == 6},
-                        {'bg-lime-500':task.task_kbn == 7},{'bg-yellow-700':task.task_kbn == 8}, {'bg-red-700':task.task_kbn == 9},
-                        {'bg-yellow-200':task.task_kbn == 10}"
+                        {'bg-red-400':task.task_kbn == 4}, {'bg-lime-400':task.task_kbn == 5}, {'bg-green-400':task.task_kbn == 6},
+                        {'bg-green-600':task.task_kbn == 7},{'bg-yellow-700':task.task_kbn == 8}, {'bg-red-700':task.task_kbn == 9},
+                        {'bg-yellow-300':task.task_kbn == 10}"
                 >
                 {{task.kaitei_kbn}}
               </div>
@@ -459,15 +459,15 @@
             <div :style="bar.style" class="rounded-lg absolute h-5 z-20" v-if="bar.task.cat === 'task'" style="cursor:grab"
               @mousedown="mouseDownMove(bar.task)" @mouseenter="hoverDetail(bar.task, bar.style)" @mouseleave="hoverOutDetail()" @dblclick="addDetail(bar.task)"
               :class="{'bg-sky-300':bar.task.task_kbn == 1}, {'bg-blue-400':bar.task.task_kbn == 2},   {'bg-indigo-500':bar.task.task_kbn == 3},
-                      {'bg-red-400':bar.task.task_kbn == 4}, {'bg-orange-400':bar.task.task_kbn == 5}, {'bg-yellow-400':bar.task.task_kbn == 6},
-                      {'bg-lime-500':bar.task.task_kbn == 7},{'bg-yellow-700':bar.task.task_kbn == 8}, {'bg-red-700':bar.task.task_kbn == 9},
-                      {'bg-yellow-200':bar.task.task_kbn == 10}"
+                      {'bg-red-400':bar.task.task_kbn == 4}, {'bg-lime-400':bar.task.task_kbn == 5}, {'bg-green-400':bar.task.task_kbn == 6},
+                      {'bg-green-600':bar.task.task_kbn == 7},{'bg-yellow-700':bar.task.task_kbn == 8}, {'bg-red-700':bar.task.task_kbn == 9},
+                      {'bg-yellow-300':bar.task.task_kbn == 10}"
             >
               <div class="w-full h-full" style="pointer-events: none;">
                 <div class="h-full rounded-l-lg" 
                   style="pointer-events: none;" 
                   :style="`width:${bar.task.percentage}%`"
-                  :class="{'rounded-r-lg': bar.task.percentage === 100}, (bar.task.percentage === 100) ? 'bg-gray-500' : 'bg-red-600'">
+                  :class="{'rounded-r-lg': bar.task.percentage === 100}, (bar.task.percentage === 100) ? 'back' : 'bg-red-600'">
                 </div>
               </div>
               <div class="absolute w-2 h-2 bg-gray-300 border border-black z-10" style="top:6px;left:-6px;cursor:col-resize" 
@@ -480,7 +480,7 @@
           <div v-for="(bar, index) in taskRireki" :key="index">
           <div v-for="(rbar, index) in bar" :key="index">
             <div @mouseenter="hoverDetail(rbar.rireki, rbar.style)" @mouseleave="hoverOutDetail()" @dblclick="addRirekiDetail(rbar.task.id, rbar.rireki.start_date)" 
-                  :style="rbar.style" class="absolute h-5 back border-l border-r border-black"  v-if="rbar.rireki.cat === 'task'"
+                  :style="rbar.style" class="absolute h-5 back rounded-lg"  v-if="rbar.rireki.cat === 'task'"
             >
               <div class="w-full h-full" style="pointer-events: none;"></div>
             </div>
@@ -1421,13 +1421,13 @@
                     case 2: task_kbn = 'rgba(96 165 250)';		break;
                     case 3: task_kbn = 'rgba(99 102 241)';		break;
                     case 4: task_kbn = 'rgba(248 113 113)'; 	break;
-                    case 5: task_kbn = 'rgba(251 146 60)'; 		break;
-                    case 6: task_kbn = 'rgba(251 191 36)'; 		break;
-                    case 7: task_kbn = 'rgba(132 204 22)';		break;
+                    case 5: task_kbn = 'rgb(163 230 53)'; 		break;
+                    case 6: task_kbn = 'rgb(74 222 128)'; 		break;
+                    case 7: task_kbn = 'rgb(22 163 74)';		  break;
                     case 8: task_kbn = 'rgba(161 98 7)';		  break;
                     case 9: task_kbn = 'rgba(185 28 28)';		  break;
-                    case 10: task_kbn = 'rgba(254 240 138)';	break;
-                    case 11: task_kbn = 'rgba(253 230 138)';	break;
+                    case 10: task_kbn = 'rgb(250 204 21)';	  break;
+                  //  case 11: task_kbn = 'rgba(254 240 138)';	break;
                   }
                   
                   style = {

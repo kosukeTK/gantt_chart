@@ -14,7 +14,7 @@
 <body>
   <div id="app" class="main-back overflow-hidden">
     <div id="gantt-header" class="h-12 p-2 flex items-center">
-      <h1 class="text-xl font-bold Ordinal">ガントチャート</h1>
+      <h1 class="text-xl font-bold Ordinal">スケジュール管理</h1>
       <button @click="addTask()" class="transition duration-500 ease-in-out transform hover:scale-110 bg-indigo-700 hover:bg-indigo-900 text-sm text-white py-1 px-4 rounded-lg ml-4 xl:w-24 xl:text-base">
         <span class="font-bold">
           追加
@@ -848,17 +848,29 @@
         let between;
         let start;
         let style;
+        let dup_top;
+        
         return displayTasks.value.map(task => {
           style = {}
+          let dup_count = 0;
           if(task.cat === 'task'){
+            //幅
             let date_from = moment(task.start_date);
             let date_to   = moment(task.end_date);
             between       = date_to.diff(date_from, 'days');
             between++;
+            //開始位置
             start = date_from.diff(start_date, 'days');
             left = start * state.block_size;
+            //履歴バーと開始位置が重複している場合、現行バーを上にずらす
+            dup_top = top;
+            task.task_rireki.map(rireki => {
+              if(task.start_date == rireki.start_date) {
+                dup_top  -= 5;
+              }
+            })
             style = {
-              top:  `${top}px`,
+              top:  `${dup_top}px`,
               left: `${left}px`,
               width:`${state.block_size * between}px`,
             }
@@ -1400,20 +1412,21 @@
         let style;
         let task_bar;
         let task_kbn;
+        let dup_top; //履歴バーの開始日が重なっている場合、上に少しずらす
         return displayTasks.value.map(task => {    //mapの直前にreturn
           if(task.cat === 'task') {
             task_bar = true;
-            return task.task_rireki.map(rireki => {  //mapの直前にreturn
+            return task.task_rireki.map((rireki, index) => {  //mapの直前にreturn
               if (rireki.cat === 'task') {
                 style = {};
                 let date_from = moment(rireki.start_date);
                 let date_to   = moment(rireki.end_date);
                 //履歴データがある場合
                 if (rireki.start_date !== '') {
-                  between       = date_to.diff(date_from, 'days');
+                  between = date_to.diff(date_from, 'days');
                   between++;
                   start = date_from.diff(start_date, 'days');
-                  left = start * state.block_size;
+                  left  = start * state.block_size;
                   
                   //改訂区分ごとに色を変える
                   switch(rireki.task_kbn) {
@@ -1427,11 +1440,16 @@
                     case 8: task_kbn = 'rgba(161 98 7)';		  break;
                     case 9: task_kbn = 'rgba(185 28 28)';		  break;
                     case 10: task_kbn = 'rgb(250 204 21)';	  break;
-                  //  case 11: task_kbn = 'rgba(254 240 138)';	break;
                   }
-                  
+                  //古い履歴バーと開始位置が重複している場合、履歴バーを上にずらす
+                  dup_top = top;
+                  for (let i = 0; i < index; i++) {
+                    if (rireki.start_date == task.task_rireki[i].start_date) {
+                      dup_top -= 5;
+                    }
+                  }
                   style = {
-                    top:  `${top}px`,
+                    top:  `${dup_top}px`,
                     left: `${left}px`,
                     width:`${state.block_size * between}px`,
                     backgroundColor: task_kbn
@@ -1442,7 +1460,7 @@
                   top = top + 40;
                   task_bar = false;
                 }
-                
+
                 return {
                   style,
                   task,

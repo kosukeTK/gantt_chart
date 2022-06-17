@@ -37,31 +37,24 @@
       <div class="h-8 ml-5">
       	<button @click="calendarViewWidthChange(state.gamen_mode)" class="bg-yellow-400 hover:bg-yellow-700 text-white font-bold py-1 px-4 rounded-lg items-center">画面切替</button>
       </div>
+      <div class="h-8 ml-5">
+      	<select v-model="state.sort_result" @change="sortTask(state.sort_result, state.sort_order_result)" class="text-xs border px-2 py-2 rounded-lg">
+          <option></option>
+          <option v-for="sort in state.sort_task" :key="sort.key" :value="sort.value">{{sort.key}}</option>
+        </select>
+      </div>
+      <div class="h-8 ml-2">
+      	<select v-model="state.sort_order_result" @change="sortTask(state.sort_result, state.sort_order_result)" class="text-xs border px-2 py-2 rounded-lg">
+          <option></option>
+          <option v-for="order in state.sort_order" :key="order.key" :value="order.value">{{order.key}}</option>
+        </select>
+      </div>
       <div class="flex items-center h-8 ml-5">
         <svg @click="state.config_show=true" xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
           <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
         </svg>
       </div>
-
-<!--
-      <div class="h-12 ml-36 border border-red-600">
-        <div class="flex">
-          <p class="h-6 w-20 flex justify-center items-center text-xs text-white font-bold bg-indigo-400">事前調査</p>
-          <p class="h-6 w-20 flex justify-center items-center text-xs text-white font-bold bg-indigo-400">改訂依頼書</p>
-          <p class="h-6 w-20 flex justify-center items-center text-xs text-white font-bold bg-blue-400">設計</p>
-          <p class="h-6 w-20 flex justify-center items-center text-xs text-white font-bold bg-blue-400">テスト仕様書</p>
-          <p class="h-6 w-20 flex justify-center items-center text-xs text-white font-bold bg-green-500">製造</p>
-         </div>
-         <div class="flex">
-          <p class="h-6 w-20 flex justify-center items-center text-xs text-white font-bold bg-red-400">テスト</p>
-          <p class="h-6 w-20 flex justify-center items-center text-xs text-white font-bold bg-pink-400">改訂資料作成</p>
-          <p class="h-6 w-20 flex justify-center items-center text-xs text-white font-bold bg-purple-400">Ｗ／Ｔ</p>
-          <p class="h-6 w-20 flex justify-center items-center text-xs text-white font-bold bg-yellow-400">切替</p>
-          <p class="h-6 w-20 flex justify-center items-center text-xs text-white font-bold bg-yellow-700">フォロー</p>
-         </div>
-      </div>
--->
       <!-- 勤務時間入力(不使用) -->
       <teleport to="#form">
       <transition name="fade">
@@ -150,14 +143,14 @@
         <div class="base z-30" v-show="state.config_show">
           <div class="overlay" v-show="state.config_show" @click="saveConfig()"></div>
           <div class="content grid grid-cols-1 divide-y" v-show="state.config_show">
-            <div class="mt-2">
-              <label for="kintai" class="text-base font-sans">勤怠管理(不使用)</label>
+            <div class="mt-2 flex space-x-4 items-center">
+              <label for="kintai" class="text-sm font-sans">勤怠管理(不使用)</label>
               <input type="checkbox" id="kintai" v-model="state.config.kintai_show" disabled>
             </div>
             <div class="mt-2">
-              <label class="text-base font-sans">月表示</label>
-              <div class="flex justify-between items-center">
-                <label class="text-base font-sans">過去月</label>
+              <label class="text-sm font-sans">月</label>
+              <div class="flex justify-evenly items-center">
+                <label class="text-sm font-sans">過去月</label>
                 <button class="border-none" @click="state.config.month_pass -= 1">
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
@@ -170,8 +163,8 @@
                 </button>
                 <p>{{ state.config.month_pass }}</p>
               </div>
-              <div class="flex justify-between items-center">
-                <label class="text-base font-sans">未来月</label>
+              <div class="flex justify-evenly items-center">
+                <label class="text-sm font-sans">未来月</label>
                 <button class="border-none" @click="state.config.month_feture -= 1">
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
@@ -196,8 +189,8 @@
           <div class="overlay" v-show="state.show" @click="state.show=false"></div>
           <div class="content" v-show="state.show">
             <h2 class="mx-36 fond-bold font-sans">タスク</h2>
-            <div v-show="state.formError">
-              <label class="bg-yellow-300 text-red-500 py-0 px-6">全て入力してください。</label>
+            <div v-show="state.formError" class="flex items-center justify-center">
+              <label class="bg-yellow-300 text-red-500 py-0 px-6">なにか間違えてます！</label>
             </div>
             <div class="my-4">
               <label class="text-xs">ID:</label>
@@ -227,13 +220,26 @@
               <label class="text-xs">担当者:</label>
               <input v-model="state.form.incharge_user" class="text-xs border px-4 py-2 rounded-lg" required>
             </div>
-            <div class="my-4">
-              <label class="text-xs">開始日:</label>
-              <input v-model="state.form.start_date" class="text-xs border px-4 py-2 rounded-lg" type="date" required>
-            </div>
-            <div class="my-4">
-              <label class="text-xs">期限日:</label>
-              <input v-model="state.form.end_date" class="text-xs border px-4 py-2 rounded-lg" type="date" required>
+            <div>
+              <div class="flex">
+                <button class="border-none">
+                  <p class="text-base font-bold" @click="setToday(-1)" @keyup.enter="setToday(-1)">－</p>
+                </button>
+                <button class="border-none">
+                  <p class="text-xs font-bold" @click="setToday(0)" @keyup.enter="setToday(0)">今日</p>
+                </button>
+                <button class="border-none">
+                  <p class="text-base font-bold" @click="setToday(1)" @keyup.enter="setToday(1)">＋</p>
+                </button>
+              </div>
+              <div class="my-4">
+                <label class="text-xs">開始日:</label>
+                <input v-model="state.form.start_date" class="text-xs border px-4 py-2 rounded-lg" type="date" required>
+              </div>
+              <div class="my-4">
+                <label class="text-xs">期限日:</label>
+                <input v-model="state.form.end_date" class="text-xs border px-4 py-2 rounded-lg" type="date" required>
+              </div>
             </div>
             <div class="px-24">
               <label class="text-xs">進捗度</label>
@@ -334,7 +340,7 @@
         <div id="gantt-task-title" class="flex items-center bg-green-600 text-white h-20"  ref="refTask">
           <div class="border-t border-r border-b flex items-center justify-center font-bold text-xs w-72 h-full">作業内容</div>
           <div class="border-t border-r border-b flex items-center justify-center font-bold text-xs w-24 h-full">作業区分</div>
-          <div v-show="state.gamen_mode" class="border-t border-r border-b flex items-center justify-center font-bold text-xs w-24 h-full">開始日</div>
+          <div v-show="state.gamen_mode" class="border-t border-r border-b flex items-center justify-center font-bold text-xs w-28 h-full">開始日</div>
           <div v-show="state.gamen_mode" class="border-t border-r border-b flex items-center justify-center font-bold text-xs w-24 h-full">完了期限日</div>
           <div v-show="state.gamen_mode" class="border-t border-r border-b flex items-center justify-center font-bold text-xs w-16 h-full">担当</div>
           <div v-show="state.gamen_mode" class="border-t border-r border-b flex items-center justify-center font-bold text-xs w-12 h-full">進捗</div>
@@ -342,7 +348,7 @@
           <div v-show="state.gamen_mode" class="border-t border-r border-b flex items-center justify-center font-bold text-xs w-12 h-full">詳細</div>
         </div>
         <div id="gantt-task-list" class="overflow-y-hidden" :style="`height:${calendarViewHeight}px`">
-          <div v-for="(task,index) in displayTasks" :key="index" class="flex h-10" @dragstart="dragTask(task)" @dragover.prevent="dragTaskOver(task)" draggable=true
+          <div id="taskIchiran" v-for="(task,index) in displayTasks" :key="index" class="flex h-10" @dragstart="dragTask(task)" @dragover.prevent="dragTaskOver(task)" draggable=true
            :class="{'bg-gray-500': task.percentage === 100}, (task.incharge_user != null && displayTasks[index+1] != null && task.incharge_user !== displayTasks[index+1].incharge_user) ? 'border-b-2 border-red-500' : 'border-b'">
             <template v-if="task.cat === 'category'">
               <div class="flex items-center font-bold w-full text-sm pl-2 flexjustify-between items-center bg-teal-100">
@@ -362,8 +368,11 @@
               </div>
             </template>
             <template v-else>
-              <div @dblclick="editTask(task)" @click="copyText(task.name)" class="transition duration-0 ease-in-out transform hover:scale-105 hover:border-none border-r flex items-center font-bold w-72 text-sm pl-4" style="cursor:pointer">
-                {{task.name}}
+              <div hidden>{{task.id}}</div>
+              <div class="border-r w-72 relative" style="cursor:pointer">
+                <div @dblclick="editTask(task)" @click="copyText(task.name)" class="absolute inset-0 pl-4 transition duration-0 ease-in-out transform hover:scale-105 flex items-center font-bold text-sm">
+                  {{task.name}}
+                </div>
               </div>
               <div class="border-r flex items-center justify-center w-24 text-sm" 
                 :class="{'bg-sky-300':task.task_kbn == 1}, {'bg-blue-400':task.task_kbn == 2},   {'bg-indigo-500':task.task_kbn == 3},
@@ -373,11 +382,21 @@
                 >
                 {{task.kaitei_kbn}}
               </div>
-              <div v-show="state.gamen_mode" @click="scrollDate(task.start_date)" class="transition duration-0 ease-in-out transform hover:scale-105 hover:border-none border-r flex items-center justify-center w-24 text-sm" style="cursor:pointer;">
-                {{task.start_date}}
+              <div v-show="state.gamen_mode" class="w-28 border-r relative">
+                <button id="scrollRirekiBtn" @click="scrollRirekiDate(task, index)" class="ml-1 border-none absolute inset-y-0 left-0 transition duration-0 ease-in-out transform hover:scale-125"
+                  :class="{'hidden':task.task_rireki.length === 1}, {'hidden':task.task_rireki[state.scroll_index] === task.task_rireki[1] && displayTasks[state.index].id === task.id}">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+                <div @click="scrollDate(task.start_date, 1)" class="absolute w-24 inset-y-0 right-0 flex items-center justify-center transition duration-0 ease-in-out transform hover:scale-105 text-sm" style="cursor:pointer;">
+                  {{task.start_date}}
+                </div>
               </div>
-              <div v-show="state.gamen_mode" @click="scrollDate(task.end_date)" class="transition duration-0 ease-in-out transform hover:scale-105 hover:border-none border-r flex items-center justify-center w-24 text-sm" style="cursor:pointer;">
-                {{task.end_date}}
+              <div v-show="state.gamen_mode" class="relative border-r w-24" style="cursor:pointer;">
+                <div @click="scrollDate(task.end_date, 1)" class="absolute inset-0 transition duration-0 ease-in-out transform hover:scale-105 flex items-center justify-center text-sm">
+                  {{task.end_date}}
+                </div>
               </div>
               <div v-show="state.gamen_mode" class="border-r flex items-center justify-center w-16 text-sm">
                 {{task.incharge_user}}
@@ -541,7 +560,7 @@
           }, 
           {
           id: 2,
-          name: 'ダイハツ',
+          name: 'その他',
           collapsed: false,
           }
         ],
@@ -555,7 +574,7 @@
           {id: 6, kbn: '結合テスト'},
           {id: 7, kbn: '総合テスト'},
           {id: 8, kbn: 'レビュー'},
-          {id: 9, kbn: '切替'},
+          {id: 9, kbn: '修正完了'},
           {id: 10, kbn: 'その他'},
         ],
         detail_show: false,
@@ -592,7 +611,26 @@
           kintai_show : false,
           month_pass  : -2,
           month_feture: 2,
-        }
+        },
+        sort_flg : false,
+        sort_result : '',
+        sort_task :[
+          {key : '作業内容',   value : 'name'},
+          {key : '作業区分',   value : 'task_kbn'},
+          {key : '開始日',     value : 'start_date'},
+          {key : '完了期限日', value : 'end_date'},
+          {key : '担当',       value : 'incharge_user'},
+          {key : '進捗',       value : 'percentage'},
+        ],
+        sort_order_flg : false,
+        sort_order_result : '',
+        sort_order : [
+          {key : '昇順', value : 'ASC'},
+          {key : '降順', value : 'DESC'},
+        ],
+        scroll_index   : '',
+        scroll_task_id : '',
+        index : 0,
       });
       
       const refTask = Vue.ref(null);
@@ -763,7 +801,8 @@
         let lists = [];
         
         //検索条件なし(フィルターなし)
-        if (state.filter_tasks == null || !state.filter_tasks.length) {
+//        if (state.filter_tasks == null || !state.filter_tasks.length) {
+        if(state.filter_flg == false) {
           //ストレージ内のタスクデータ取得
           let taskData = window.localStorage.getItem('task');
           state.tasks  = JSON.parse(taskData);
@@ -797,11 +836,15 @@
           }
         //検索条件あり(フィルターあり)  
         } else {
+          let filter_tasks = state.tasks.filter(task => {
+            return task.name.includes(state.search_task.trim()) || task.incharge_user.includes(state.search_task.trim())
+          })
           //lists[]にカテゴリーを追加
           state.categories.map(category => {
             lists.push({ cat: 'category', ...category });
             //lists[]にタスクを追加
-            state.filter_tasks.map(task => {
+//            state.filter_tasks.map(task => {
+            filter_tasks.map(task => {
               if (task.category_id === category.id && !category.collapsed) {
                 lists.push({ cat: 'task', ...task });
               }
@@ -815,17 +858,64 @@
               }
             })
           })
-        }  
-        
-        //改訂区分で昇順ソート
-        lists.sort((a, b) => {
-          if(a.category_id === b.category_id) {
-            return (a.incharge_user > b.incharge_user) ? 1 : (a.incharge_user < b.incharge_user) ? -1 : //担当者
-                   (a.start_date > b.start_date) ? 1 : (a.start_date < b.start_date) ? -1 :            //開始日時
-                   (a.task_kbn > b.task_kbn) ? 1 : (a.task_kbn < b.task_kbn) ? -1 : 0                  //業務区分
-
+        }
+        //ソート指定あり  
+        if(state.sort_flg) {
+          lists.sort((a, b) => {
+            if(a.category_id === b.category_id) {
+              if(state.sort_order_flg == true && state.sort_order_result === "DESC") {
+                switch(state.sort_result) {
+                  case 'name' :         return (a.name < b.name) ? 1 : (a.name > b.name) ? -1 : 0; break;
+                  case 'task_kbn' :     return (a.task_kbn < b.task_kbn) ? 1 : (a.task_kbn > b.task_kbn) ? -1 : 
+                                               (a.name > b.name) ? 1 : (a.name < b.name) ? -1 : 0; break;
+                  case 'start_date' :   return (a.start_date < b.start_date) ? 1 : (a.start_date > b.start_date) ? -1 :
+                                               (a.name > b.name) ? 1 : (a.name < b.name) ? -1 : 0; break;
+                  case 'end_date' :     return (a.end_date < b.end_date) ? 1 : (a.end_date > b.end_date) ? -1 :
+                                               (a.name > b.name) ? 1 : (a.name < b.name) ? -1 : 0; break;
+                  case 'incharge_user' :return (a.incharge_user < b.incharge_user) ? 1 : (a.incharge_user > b.incharge_user) ? -1 :
+                                               (a.name > b.name) ? 1 : (a.name < b.name) ? -1 : 0; break;
+                  case 'percentage' :   return (a.percentage < b.percentage) ? 1 : (a.percentage > b.percentage) ? -1 :
+                                               (a.name > b.name) ? 1 : (a.name < b.name) ? -1 : 0; break;
+                }
+              } else {
+                switch(state.sort_result) {
+                  case 'name' :         return (a.name > b.name) ? 1 : (a.name < b.name) ? -1 : 0; break;
+                  case 'task_kbn' :     return (a.task_kbn > b.task_kbn) ? 1 : (a.task_kbn < b.task_kbn) ? -1 : 
+                                               (a.name > b.name) ? 1 : (a.name < b.name) ? -1 : 0; break;
+                  case 'start_date' :   return (a.start_date > b.start_date) ? 1 : (a.start_date < b.start_date) ? -1 :
+                                               (a.name > b.name) ? 1 : (a.name < b.name) ? -1 : 0; break;
+                  case 'end_date' :     return (a.end_date > b.end_date) ? 1 : (a.end_date < b.end_date) ? -1 :
+                                               (a.name > b.name) ? 1 : (a.name < b.name) ? -1 : 0; break;
+                  case 'incharge_user' :return (a.incharge_user > b.incharge_user) ? 1 : (a.incharge_user < b.incharge_user) ? -1 :
+                                               (a.name > b.name) ? 1 : (a.name < b.name) ? -1 : 0; break;
+                  case 'percentage' :   return (a.percentage > b.percentage) ? 1 : (a.percentage < b.percentage) ? -1 :
+                                               (a.name > b.name) ? 1 : (a.name < b.name) ? -1 : 0; break;
+                }
+              }
+            }
+          })
+        } else {
+          //ソート指定なし
+          if(state.sort_order_flg == true && state.sort_order_result === "DESC") {
+            lists.sort((a, b) => {
+              if(a.category_id === b.category_id) {
+                return (a.incharge_user < b.incharge_user) ? 1 : (a.incharge_user > b.incharge_user) ? -1 : //担当者
+                       (a.start_date < b.start_date) ? 1 : (a.start_date > b.start_date) ? -1 :            //開始日時
+                       (a.task_kbn < b.task_kbn) ? 1 : (a.task_kbn > b.task_kbn) ? -1 :                    //業務区分
+                       (a.name > b.name) ? 1 : (a.name < b.name) ? -1 : 0                                  //作業内容
+              }
+            })
+          } else {
+            lists.sort((a, b) => {
+              if(a.category_id === b.category_id) {
+                return (a.incharge_user > b.incharge_user) ? 1 : (a.incharge_user < b.incharge_user) ? -1 : //担当者
+                        (a.start_date > b.start_date) ? 1 : (a.start_date < b.start_date) ? -1 :            //開始日時
+                        (a.task_kbn > b.task_kbn) ? 1 : (a.task_kbn < b.task_kbn) ? -1 :                    //業務区分
+                        (a.name > b.name) ? 1 : (a.name < b.name) ? -1 : 0                                  //作業内容
+              }
+            })
           }
-        })
+        }
 //        console.table(lists);
         return lists;
       });
@@ -1054,6 +1144,7 @@
 //***************************************************************************************
 //----改訂案件ボタン----
       const addTask = () => {
+        state.formError = false
         state.update_mode = false;
         state.form = {};
         //タスクIDの自動インクリメント
@@ -1129,6 +1220,7 @@
       };
 //----更新フォームへ遷移ボタン----
       const editTask = (task) => {
+        state.formError = false
         state.update_mode = true;
         state.show = true;
         state.rireki_flg = false;
@@ -1195,7 +1287,9 @@
       const formCheck = () => {
         if (!state.form.category_id   || !state.form.name       ||
             !state.form.incharge_user || !state.form.start_date ||
-            !state.form.end_date      || state.form.percentage == null) {
+            !state.form.end_date      || state.form.percentage == null ||
+             state.form.end_date < state.form.start_date         
+           ) {
           state.formError = true
           return 1
         } else {
@@ -1278,11 +1372,14 @@
       const searchTask = () => {
         state.filter_tasks = [];
         let word = state.search_task.trim();
-        if (!word) { return; }
+        if (!word) { 
+          state.filter_flg = false;
+          return; 
+        }
         
-        state.filter_tasks = state.tasks.filter(task => {
-          return task.name.includes(word) || task.incharge_user.includes(word)
-        })
+        // state.filter_tasks = state.tasks.filter(task => {
+        //   return task.name.includes(word) || task.incharge_user.includes(word)
+        // })
         state.filter_flg = true
 //        console.log(state.filter_tasks)
       }
@@ -1504,13 +1601,47 @@
 //***************************************************************************************
 //  選択した日付まで移動
 //***************************************************************************************
-      const scrollDate = (date) => {
+      const scrollDate = (date, status) => {
         let start_date = moment(state.start_month);
         let task_date = moment(date)
         let between_date = task_date.diff(start_date, 'days');
 //      let scroll = (between_date + 1) * state.block_size - refCalendar.value.clientWidth / 2;
         let scroll = (between_date + 1) * state.block_size - calendarViewWidth.value / 2;
         $('#gantt-calendar').animate({scrollLeft: scroll}, 300);
+        if(status == 1) {
+          state.scroll_task_id = '';
+          state.scroll_index = '';
+          state.index = 0;
+        }
+      }
+
+
+//***************************************************************************************
+//  選択した日付の履歴まで移動
+//***************************************************************************************
+      const scrollRirekiDate = (task, index) => {
+        
+        //履歴がない場合
+        if (task.task_rireki.length <= 1) return;
+        //１回目
+        if (task.id != state.scroll_task_id) {
+          //選択したタスクを保持
+          state.scroll_task_id = task.id;
+          state.index = index;
+          //履歴index
+          let rireki_index = task.task_rireki.length -1;
+          let start_date = task.task_rireki[rireki_index].start_date;
+          scrollDate(start_date, 0);
+          state.scroll_index = rireki_index;
+        //２回目以降
+        } else {
+          if ((state.scroll_index -1) <= 0) return;
+          //履歴を遡る
+          state.scroll_index -= 1;
+          let start_date = task.task_rireki[state.scroll_index].start_date;
+          scrollDate(start_date, 0);
+        }
+
       }
 
 //***************************************************************************************
@@ -1614,19 +1745,51 @@
       }
 
 //***************************************************************************************
+//  今日を設定
+//***************************************************************************************
+      const setToday = (num) => {
+
+        if(num === 0) {
+          state.form.start_date = moment().format('YYYY-MM-DD');
+          state.form.end_date   = moment().format('YYYY-MM-DD');
+        } else {
+          state.form.start_date = moment(state.form.start_date).add(num ,'days').format('YYYY-MM-DD');
+          state.form.end_date   = moment(state.form.end_date).add(num ,'days').format('YYYY-MM-DD');
+        }
+      }
+
+//***************************************************************************************
+//  並び順を設定
+//***************************************************************************************
+      const sortTask = (sort, order) => {
+
+        if(sort != "" && sort != null) {
+          state.sort_flg = true;
+        } else {
+          state.sort_flg = false;
+        }
+
+        if(order != "" && order != null) {
+          state.sort_order_flg = true;
+        } else {
+          state.sort_order_flg = false;
+        }
+      }
+
+//***************************************************************************************
 //  マウント
 //***************************************************************************************
       Vue.onMounted(() => {
         moment.lang("ja", {weekdays: ["日","月","火","水","木","金","土"]});
         getCalendar();
         getWindowSize();
-        window.document.oncontextmenu = function () {return false;}
-        window.document.onkeydown = function(event) {
-          if(event.keyCode == 123) {
-            event.keyCode = null;
-            event.returnValue = false;
-          }
-        };
+        // window.document.oncontextmenu = function () {return false;}
+        // window.document.onkeydown = function(event) {
+        //   if(event.keyCode == 123) {
+        //     event.keyCode = null;
+        //     event.returnValue = false;
+        //   }
+        // };
         window.addEventListener('resize', getWindowSize);
         window.addEventListener('wheel', windowSizeCheck);
         window.addEventListener('mousemove', mouseMove);
@@ -1681,6 +1844,7 @@
         addRirekiDetail,
         percent,
         scrollDate,
+        scrollRirekiDate,
         addHoliday,
         hoverDetail,
         hoverOutDetail,
@@ -1688,6 +1852,8 @@
         downloadJSON,
         uploadJSON,
         saveConfig,
+        setToday,
+        sortTask,
       };
     },
   }).mount('#app');
